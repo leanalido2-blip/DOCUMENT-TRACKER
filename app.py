@@ -39,10 +39,10 @@ custom_css = """
             box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.12) !important;
         }
 
-        /* Main Header & Subtitle */
+        /* Oswald font for Main School Header */
         .school-header {
             font-family: 'Oswald', sans-serif !important;
-            font-size: 40px !important; 
+            font-size: 42px !important; 
             font-weight: 700 !important;
             letter-spacing: 0.5px;
             color: var(--text-color) !important;
@@ -50,6 +50,7 @@ custom_css = """
             margin-bottom: 2px !important;
         }
         
+        /* Subtitle */
         .portal-subtitle {
             font-family: 'Inter', sans-serif !important;
             font-size: 16px !important;
@@ -59,46 +60,55 @@ custom_css = """
             margin-top: 0px !important;
         }
 
-        /* Custom Interactive Dashboard Tiles */
+        /* Bold & Prominent KPI Card Buttons using Oswald Font */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button {
             width: 100% !important;
-            height: 92px !important;
-            border-radius: 12px !important;
-            border: 1px solid rgba(125, 125, 125, 0.18) !important;
-            background-color: rgba(125, 125, 125, 0.05) !important;
+            height: 110px !important;
+            border-radius: 14px !important;
+            border: 1px solid rgba(125, 125, 125, 0.2) !important;
+            background-color: rgba(125, 125, 125, 0.06) !important;
             color: var(--text-color) !important;
+            padding: 14px 20px !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        /* Target all text elements inside the card button for Oswald font & bold sizing */
+        div[data-testid="stColumn"] div[data-testid="stButton"] > button,
+        div[data-testid="stColumn"] div[data-testid="stButton"] > button p,
+        div[data-testid="stColumn"] div[data-testid="stButton"] > button div,
+        div[data-testid="stColumn"] div[data-testid="stButton"] > button span {
             font-family: 'Oswald', sans-serif !important;
             font-weight: 700 !important;
-            font-size: 26px !important;
-            white-space: pre-wrap !important;
-            line-height: 1.2 !important;
+            font-size: 28px !important;
+            line-height: 1.15 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
             text-align: left !important;
-            padding: 12px 18px !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02) !important;
+            white-space: pre-wrap !important;
         }
-        
+
         div[data-testid="stColumn"] div[data-testid="stButton"] > button:hover {
             transform: translateY(-3px) !important;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
-            background-color: rgba(125, 125, 125, 0.10) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+            background-color: rgba(125, 125, 125, 0.12) !important;
         }
 
-        /* Card Color Accents */
+        /* Distinct Colored Left Borders */
         div[data-testid="stColumn"]:nth-child(1) div[data-testid="stButton"] > button {
-            border-left: 5px solid #2563eb !important; /* Total: Blue */
+            border-left: 6px solid #2563eb !important; /* Total: Blue */
         }
         div[data-testid="stColumn"]:nth-child(2) div[data-testid="stButton"] > button {
-            border-left: 5px solid #d97706 !important; /* Pending: Amber */
+            border-left: 6px solid #d97706 !important; /* Pending: Amber */
         }
         div[data-testid="stColumn"]:nth-child(3) div[data-testid="stButton"] > button {
-            border-left: 5px solid #dc2626 !important; /* Returned: Red */
+            border-left: 6px solid #dc2626 !important; /* Returned: Red */
         }
         div[data-testid="stColumn"]:nth-child(4) div[data-testid="stButton"] > button {
-            border-left: 5px solid #16a34a !important; /* Released: Green */
+            border-left: 6px solid #16a34a !important; /* Released: Green */
         }
 
-        /* Alignment for header area */
+        /* Vertically center logo with title */
         [data-testid="stHorizontalBlock"] {
             align-items: center;
         }
@@ -142,7 +152,7 @@ col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
     if os.path.exists("ESNCHS-LOGO.png"):
-        st.image("ESNCHS-LOGO.png", width=105)
+        st.image("ESNCHS-LOGO.png", width=110)
     else:
         st.title("🏫")
 
@@ -152,7 +162,7 @@ with col_title:
 
 st.divider()
 
-# --- 4. CLICKABLE DASHBOARD TILES ---
+# --- 4. CLICKABLE BOLD DASHBOARD TILES ---
 if not df.empty:
     total_docs = len(df)
     pending_count = 0
@@ -264,7 +274,7 @@ if not filtered_df.empty:
 else:
     st.warning("❌ No records found matching your query/filter.")
 
-# Refresh Data button
+# Left-aligned Refresh button directly below table
 if st.button("Refresh Data"):
     st.cache_data.clear()
     st.rerun()
