@@ -82,14 +82,6 @@ custom_css = """
         [data-testid="stHorizontalBlock"] {
             align-items: center;
         }
-
-        /* Footer styling */
-        .portal-footer {
-            text-align: center;
-            padding: 20px;
-            opacity: 0.6;
-            font-size: 13px;
-        }
     </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -175,7 +167,7 @@ with col_search:
         label_visibility="collapsed"
     ).strip().lower()
 
-with col2 if 'col2' in locals() else col_filter:
+with col_filter:
     default_statuses = ["PENDING", "RETURNED", "RELEASED"]
     
     sheet_remarks = []
@@ -211,11 +203,6 @@ if not filtered_df.empty:
                 selected_remark.upper(), na=False
             )
             filtered_df = filtered_df[mask_remark]
-        else:
-            st.error(
-                f"⚠️ Could not find a column named 'REMARKS' or 'REMARK' in your Google Sheet. "
-                f"Detected columns: **{list(df.columns)}**"
-            )
 
 # --- 7. RECORDBOOK DISPLAY ---
 st.markdown(f"#### 📋 Document Records ({len(filtered_df)} showing)")
@@ -224,20 +211,16 @@ if not filtered_df.empty:
     st.dataframe(
         filtered_df, 
         use_container_width=True, 
-        hide_index=True,
-        height=450
+        hide_index=True
     )
 else:
-    st.warning(f"❌ No records found matching your query/filter.")
+    st.warning("❌ No records found matching your query/filter.")
 
-# --- 8. FOOTER & REFRESH ---
+# Left-aligned Refresh button directly below table (without icon)
+if st.button("Refresh Data"):
+    st.cache_data.clear()
+    st.rerun()
+
+# --- 8. FOOTER ---
 st.markdown("---")
-col_bot1, col_bot2 = st.columns([4, 1])
-
-with col_bot1:
-    st.caption("Eastern Samar National Comprehensive High School • Document Management & Registrar Office")
-
-with col_bot2:
-    if st.button("🔄 Refresh Data", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
+st.caption("Eastern Samar National Comprehensive High School")
