@@ -42,7 +42,7 @@ custom_css = """
         /* Oswald font for Main School Header */
         .school-header {
             font-family: 'Oswald', sans-serif !important;
-            font-size: 42px !important; 
+            font-size: 40px !important; 
             font-weight: 700 !important;
             letter-spacing: 0.5px;
             color: var(--text-color) !important;
@@ -60,17 +60,17 @@ custom_css = """
             margin-top: 0px !important;
         }
 
-        /* Bold & Centered KPI Card Buttons using Oswald Font */
+        /* Minimalist & Compact KPI Cards (No Colors) */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button {
             width: 100% !important;
-            height: 110px !important;
-            border-radius: 14px !important;
-            border: 1px solid rgba(125, 125, 125, 0.2) !important;
-            background-color: rgba(125, 125, 125, 0.06) !important;
+            height: 78px !important;
+            border-radius: 10px !important;
+            border: 1px solid rgba(125, 125, 125, 0.22) !important;
+            background-color: rgba(125, 125, 125, 0.03) !important;
             color: var(--text-color) !important;
-            padding: 12px 16px !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+            padding: 8px 12px !important;
+            transition: all 0.2s ease-in-out !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02) !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
@@ -78,14 +78,14 @@ custom_css = """
             text-align: center !important;
         }
 
-        /* Enforce absolute centering on all text elements inside the cards */
+        /* Enforce Oswald Font, Bold Weight, and Perfectly Centered Text */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button p,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button div,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button span {
             font-family: 'Oswald', sans-serif !important;
             font-weight: 700 !important;
-            font-size: 28px !important;
+            font-size: 21px !important;
             line-height: 1.2 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.5px !important;
@@ -96,23 +96,10 @@ custom_css = """
         }
 
         div[data-testid="stColumn"] div[data-testid="stButton"] > button:hover {
-            transform: translateY(-3px) !important;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
-            background-color: rgba(125, 125, 125, 0.12) !important;
-        }
-
-        /* Distinct Colored Left Borders */
-        div[data-testid="stColumn"]:nth-child(1) div[data-testid="stButton"] > button {
-            border-left: 6px solid #2563eb !important; /* Total: Blue */
-        }
-        div[data-testid="stColumn"]:nth-child(2) div[data-testid="stButton"] > button {
-            border-left: 6px solid #d97706 !important; /* Pending: Amber */
-        }
-        div[data-testid="stColumn"]:nth-child(3) div[data-testid="stButton"] > button {
-            border-left: 6px solid #dc2626 !important; /* Returned: Red */
-        }
-        div[data-testid="stColumn"]:nth-child(4) div[data-testid="stButton"] > button {
-            border-left: 6px solid #16a34a !important; /* Released: Green */
+            transform: translateY(-2px) !important;
+            border-color: rgba(125, 125, 125, 0.5) !important;
+            background-color: rgba(125, 125, 125, 0.08) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
         }
 
         /* Vertically center logo with title */
@@ -159,7 +146,7 @@ col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
     if os.path.exists("ESNCHS-LOGO.png"):
-        st.image("ESNCHS-LOGO.png", width=110)
+        st.image("ESNCHS-LOGO.png", width=105)
     else:
         st.title("🏫")
 
@@ -169,7 +156,7 @@ with col_title:
 
 st.divider()
 
-# --- 4. CLICKABLE BOLD DASHBOARD TILES ---
+# --- 4. CLICKABLE MINIMALIST DASHBOARD TILES ---
 if not df.empty:
     total_docs = len(df)
     pending_count = 0
