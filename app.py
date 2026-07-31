@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Page Configuration
+# Page Configuration using your official ESNCHS logo as the browser tab icon
 st.set_page_config(
-    page_title="Document Tracking Portal", 
+    page_title="ESNCHS Document Tracking Portal", 
     layout="wide", 
     page_icon="ESNCHS-LOGO.png"
 )
@@ -30,7 +30,7 @@ custom_css = """
         /* Oswald font for School Header */
         .school-header {
             font-family: 'Oswald', sans-serif !important;
-            font-size: 50px !important; 
+            font-size: 48px !important; 
             font-weight: 700 !important;
             color: var(--text-color) !important;
             line-height: 1.1 !important;
@@ -82,14 +82,13 @@ df = load_data(GSHEET_URL)
 col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
-    # MATCHES EXACT FILENAME: ESNCHS-LOGO.png
     if os.path.exists("ESNCHS-LOGO.png"):
         st.image("ESNCHS-LOGO.png", width=110)
     else:
         st.title("🏫")
 
 with col_title:
-    # ✏️ REPLACE WITH YOUR ACTUAL SCHOOL / UNIVERSITY NAME BELOW:
+    # ✏️ REPLACE WITH YOUR ACTUAL SCHOOL NAME BELOW:
     st.markdown('<p class="school-header">EASTERN SAMAR NATIONAL COMPREHENSIVE HIGH SCHOOL</p>', unsafe_allow_html=True)
     st.markdown('<p class="portal-subtitle">Document Status & Tracking Portal</p>', unsafe_allow_html=True)
 
@@ -107,24 +106,37 @@ with col1:
     ).strip().lower()
 
 with col2:
-    remark_options = ["All Remarks"]
+    # Explicit status options + dynamic ones found in the sheet
+    default_statuses = ["PENDING", "RETURNED", "RELEASED"]
+    
+    sheet_remarks = []
     if "Remark" in df.columns:
-        opts = df["Remark"].unique().tolist()
-        if "N/A" in opts: opts.remove("N/A")
-        remark_options += sorted(opts)
-        
+        sheet_remarks = [
+            str(r).strip().upper() 
+            for r in df["Remark"].unique() 
+            if str(r).strip().upper() not in ["N/A", "NAN", ""]
+        ]
+
+    # Combines defaults + sheet statuses while removing duplicates
+    combined_list = list(dict.fromkeys(default_statuses + sorted(sheet_remarks)))
+    remark_options = ["All Remarks"] + combined_list
+
     selected_remark = st.selectbox("Filter by Remark", remark_options, label_visibility="collapsed")
 
 # --- 5. FILTERING LOGIC ---
 filtered_df = df.copy()
 
 if not filtered_df.empty:
+    # Apply Search Filter
     if search_query:
         mask = filtered_df.apply(lambda row: row.astype(str).str.lower().str.contains(search_query).any(), axis=1)
         filtered_df = filtered_df[mask]
 
+    # Apply Status/Remark Filter (Case-Insensitive)
     if selected_remark != "All Remarks" and "Remark" in filtered_df.columns:
-        filtered_df = filtered_df[filtered_df["Remark"] == selected_remark]
+        filtered_df = filtered_df[
+            filtered_df["Remark"].astype(str).str.strip().str.upper() == selected_remark.upper()
+        ]
 
 # --- 6. RECORDBOOK DISPLAY ---
 st.subheader(f"📋 Tracked Documents ({len(filtered_df)} records)")
