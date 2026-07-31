@@ -12,21 +12,22 @@ st.set_page_config(
 # --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
 GSHEET_URL = "https://docs.google.com/spreadsheets/d/1Eu204mywqGj5ih3eCbpJOhTEaoaTP2du3i8hNPWUcCU/edit?usp=sharing"
 
-# --- 2. CUSTOM CSS FOR CIRCULAR WHITE LOGO BADGE & FONT ---
+# --- 2. CUSTOM CSS FOR TIGHT LOGO BADGE & FONT ---
 font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
 
 custom_css = """
     <style>
-        /* Permanent White Circular Badge for the Logo */
+        /* Sleek, tight white circle background for logo without overlapping */
         [data-testid="stImage"] img {
             background-color: #FFFFFF !important;
             border-radius: 50% !important;
-            padding: 8px !important;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3) !important;
+            padding: 3px !important;
+            object-fit: contain !important;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25) !important;
         }
 
-        /* Oswald font, large size, auto-adapts text color */
+        /* Oswald font for School Header */
         .school-header {
             font-family: 'Oswald', sans-serif !important;
             font-size: 50px !important; 
@@ -67,9 +68,9 @@ def get_csv_url(sheet_url):
 def load_data(url):
     try:
         csv_url = get_csv_url(url)
-        df = pd.read_csv(csv_url)
+        # dtype=str ensures numbers keep leading zeros (e.g. 0001 stays 0001)
+        df = pd.read_csv(csv_url, dtype=str)
         df = df.fillna("N/A")
-        df = df.astype(str)
         return df
     except Exception as e:
         st.error("⚠️ Unable to load Google Sheet data. Please check your share settings.")
@@ -82,7 +83,7 @@ col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
     if os.path.exists("logo-esnchs.png"):
-        st.image("logo-esnchs.png", width=120)
+        st.image("logo-esnchs.png", width=110)
     else:
         st.title("🏫")
 
