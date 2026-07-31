@@ -20,12 +20,12 @@ def set_status_filter(status_name):
     st.session_state["selected_remark"] = status_name
 
 # --- 2. ADVANCED STYLING & CUSTOM CSS ---
-font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
 
 custom_css = """
     <style>
-        /* Base typography & layout refinements */
+        /* Base Typography */
         html, body, [class*="css"] {
             font-family: 'Inter', sans-serif;
         }
@@ -36,13 +36,13 @@ custom_css = """
             border-radius: 50% !important;
             padding: 4px !important;
             object-fit: contain !important;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.12) !important;
         }
 
-        /* Oswald font for Main School Header */
+        /* Main Header & Subtitle */
         .school-header {
             font-family: 'Oswald', sans-serif !important;
-            font-size: 42px !important; 
+            font-size: 40px !important; 
             font-weight: 700 !important;
             letter-spacing: 0.5px;
             color: var(--text-color) !important;
@@ -50,40 +50,55 @@ custom_css = """
             margin-bottom: 2px !important;
         }
         
-        /* Subtitle */
         .portal-subtitle {
-            font-family: 'Inter', sans-serif;
-            font-size: 17px !important;
-            font-weight: 500;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 16px !important;
+            font-weight: 500 !important;
             color: var(--text-color) !important;
             opacity: 0.75;
             margin-top: 0px !important;
         }
 
-        /* Make KPI buttons look like interactive cards */
+        /* Custom Interactive Dashboard Tiles */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button {
             width: 100% !important;
-            height: 85px !important;
+            height: 92px !important;
             border-radius: 12px !important;
-            border: 1px solid rgba(125, 125, 125, 0.25) !important;
-            background-color: rgba(125, 125, 125, 0.06) !important;
+            border: 1px solid rgba(125, 125, 125, 0.18) !important;
+            background-color: rgba(125, 125, 125, 0.05) !important;
             color: var(--text-color) !important;
-            font-weight: 600 !important;
-            font-size: 15px !important;
+            font-family: 'Oswald', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 26px !important;
             white-space: pre-wrap !important;
-            line-height: 1.4 !important;
-            transition: all 0.2s ease-in-out !important;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03) !important;
+            line-height: 1.2 !important;
+            text-align: left !important;
+            padding: 12px 18px !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02) !important;
         }
         
         div[data-testid="stColumn"] div[data-testid="stButton"] > button:hover {
-            border-color: rgba(125, 125, 125, 0.5) !important;
-            background-color: rgba(125, 125, 125, 0.15) !important;
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+            background-color: rgba(125, 125, 125, 0.10) !important;
         }
 
-        /* Vertically centers logo with text */
+        /* Card Color Accents */
+        div[data-testid="stColumn"]:nth-child(1) div[data-testid="stButton"] > button {
+            border-left: 5px solid #2563eb !important; /* Total: Blue */
+        }
+        div[data-testid="stColumn"]:nth-child(2) div[data-testid="stButton"] > button {
+            border-left: 5px solid #d97706 !important; /* Pending: Amber */
+        }
+        div[data-testid="stColumn"]:nth-child(3) div[data-testid="stButton"] > button {
+            border-left: 5px solid #dc2626 !important; /* Returned: Red */
+        }
+        div[data-testid="stColumn"]:nth-child(4) div[data-testid="stButton"] > button {
+            border-left: 5px solid #16a34a !important; /* Released: Green */
+        }
+
+        /* Alignment for header area */
         [data-testid="stHorizontalBlock"] {
             align-items: center;
         }
@@ -104,10 +119,8 @@ def get_csv_url(sheet_url):
 def load_data(url):
     try:
         csv_url = get_csv_url(url)
-        # dtype=str ensures numbers keep leading zeros (e.g. 0001 stays 0001)
         df = pd.read_csv(csv_url, dtype=str)
         df = df.fillna("N/A")
-        # Strip leading/trailing spaces from headers
         df.columns = df.columns.str.strip()
         return df
     except Exception as e:
@@ -129,7 +142,7 @@ col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
     if os.path.exists("ESNCHS-LOGO.png"):
-        st.image("ESNCHS-LOGO.png", width=110)
+        st.image("ESNCHS-LOGO.png", width=105)
     else:
         st.title("🏫")
 
@@ -139,7 +152,7 @@ with col_title:
 
 st.divider()
 
-# --- 4. CLICKABLE KPI SUMMARY CARDS ---
+# --- 4. CLICKABLE DASHBOARD TILES ---
 if not df.empty:
     total_docs = len(df)
     pending_count = 0
@@ -156,7 +169,7 @@ if not df.empty:
 
     with m1:
         st.button(
-            f"📊 TOTAL RECORDS\n{total_docs}", 
+            f"📊 TOTAL\n{total_docs}", 
             on_click=set_status_filter, 
             args=("All Remarks",),
             use_container_width=True
@@ -223,7 +236,7 @@ with col_filter:
 filtered_df = df.copy()
 
 if not filtered_df.empty:
-    # 1. Search Bar Filter across all text
+    # 1. Search Bar Filter
     if search_query:
         mask_search = filtered_df.apply(
             lambda row: row.astype(str).str.lower().str.contains(search_query).any(), 
@@ -251,7 +264,7 @@ if not filtered_df.empty:
 else:
     st.warning("❌ No records found matching your query/filter.")
 
-# Left-aligned Refresh button directly below table (without icon)
+# Refresh Data button
 if st.button("Refresh Data"):
     st.cache_data.clear()
     st.rerun()
