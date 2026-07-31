@@ -12,13 +12,13 @@ st.set_page_config(
 # --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
 GSHEET_URL = "https://docs.google.com/spreadsheets/d/1Eu204mywqGj5ih3eCbpJOhTEaoaTP2du3i8hNPWUcCU/edit?usp=sharing"
 
-# --- 2. CUSTOM CSS FOR TIGHT LOGO BADGE & FONT ---
+# --- 2. CUSTOM CSS FOR LOGO BADGE & FONT ---
 font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
 
 custom_css = """
     <style>
-        /* Sleek, tight white circle background for logo without overlapping */
+        /* Sleek white circle background for logo */
         [data-testid="stImage"] img {
             background-color: #FFFFFF !important;
             border-radius: 50% !important;
@@ -78,6 +78,24 @@ def load_data(url):
 
 df = load_data(GSHEET_URL)
 
+# --- DYNAMICALLY DETECT REMARK/STATUS COLUMN ---
+remark_col = None
+if not df.empty:
+    possible_names = [
+        "remark", "remarks", "status", "document status", 
+        "doc status", "action", "action taken", "state", "remarks/status"
+    ]
+    for col in df.columns:
+        if col.strip().lower() in possible_names:
+            remark_col = col
+            break
+            
+    if not remark_col:
+        for col in df.columns:
+            if "remark" in col.lower() or "status" in col.lower() or "action" in col.lower():
+                remark_col = col
+                break
+
 # --- 3. BRANDED HEADER (LOGO + SCHOOL NAME) ---
 col_logo, col_title = st.columns([1, 6])
 
@@ -88,7 +106,6 @@ with col_logo:
         st.title("🏫")
 
 with col_title:
-    # ✏️ REPLACE WITH YOUR ACTUAL SCHOOL NAME BELOW:
     st.markdown('<p class="school-header">EASTERN SAMAR NATIONAL COMPREHENSIVE HIGH SCHOOL</p>', unsafe_allow_html=True)
     st.markdown('<p class="portal-subtitle">Document Status & Tracking Portal</p>', unsafe_allow_html=True)
 
@@ -106,18 +123,17 @@ with col1:
     ).strip().lower()
 
 with col2:
-    # Explicit status options + dynamic ones found in the sheet
     default_statuses = ["PENDING", "RETURNED", "RELEASED"]
     
     sheet_remarks = []
-    if "Remark" in df.columns:
+    if remark_col:
         sheet_remarks = [
             str(r).strip().upper() 
-            for r in df["Remark"].unique() 
+            for r in df[remark_col].unique() 
             if str(r).strip().upper() not in ["N/A", "NAN", ""]
         ]
 
-    # Combines defaults + sheet statuses while removing duplicates
+    # Combine defaults + actual sheet statuses without duplicates
     combined_list = list(dict.fromkeys(default_statuses + sorted(sheet_remarks)))
     remark_options = ["All Remarks"] + combined_list
 
@@ -127,16 +143,27 @@ with col2:
 filtered_df = df.copy()
 
 if not filtered_df.empty:
-    # Apply Search Filter
+    # 1. Search Bar Filter (Searches across all text in the table)
     if search_query:
-        mask = filtered_df.apply(lambda row: row.astype(str).str.lower().str.contains(search_query).any(), axis=1)
-        filtered_df = filtered_df[mask]
+        mask_search = filtered_df.apply(
+            lambda row: row.astype(str).str.lower().str.contains(search_query).any(), 
+            axis=1
+        )
+        filtered_df = filtered_df[mask_search]
 
-    # Apply Status/Remark Filter (Case-Insensitive)
-    if selected_remark != "All Remarks" and "Remark" in filtered_df.columns:
-        filtered_df = filtered_df[
-            filtered_df["Remark"].astype(str).str.strip().str.upper() == selected_remark.upper()
-        ]
+    # 2. Status Dropdown Filter (Automatic Fail-Safe)
+    if selected_remark != "All Remarks":
+        if remark_col and remark_col in filtered_df.columns:
+            # Filter specifically by the status column
+            mask_status = filtered_df[remark_col].astype(str).str.upper().str.contains(selected_remark.upper(), na=False)
+            filtered_df = filtered_df[mask_status]
+        else:
+            # Fallback: Search across ALL columns for the selected status keyword
+            mask_status = filtered_df.apply(
+                lambda row: row.astype(str).str.upper().str.contains(selected_remark.upper()).any(), 
+                axis=1
+            )
+            filtered_df = filtered_df[mask_status]
 
 # --- 6. RECORDBOOK DISPLAY ---
 st.subheader(f"📋 Tracked Documents ({len(filtered_df)} records)")
@@ -144,7 +171,7 @@ st.subheader(f"📋 Tracked Documents ({len(filtered_df)} records)")
 if not filtered_df.empty:
     st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 else:
-    st.warning("❌ No matching records found.")
+    st.warning(f"❌ No records found with status '{selected_remark}'.")
 
 # Refresh Button
 st.markdown("---")
