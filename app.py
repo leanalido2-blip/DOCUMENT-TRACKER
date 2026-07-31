@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Page Configuration using your official ESNCHS logo as the browser tab icon
+# Page Configuration
 st.set_page_config(
     page_title="ESNCHS Document Tracking Portal", 
     layout="wide", 
@@ -12,44 +12,83 @@ st.set_page_config(
 # --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
 GSHEET_URL = "https://docs.google.com/spreadsheets/d/1Eu204mywqGj5ih3eCbpJOhTEaoaTP2du3i8hNPWUcCU/edit?usp=sharing"
 
-# --- 2. CUSTOM CSS FOR LOGO BADGE & FONT ---
-font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap"
+# --- 2. ADVANCED STYLING & CUSTOM CSS ---
+font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
 
 custom_css = """
     <style>
+        /* Base typography & layout refinements */
+        html, body, [class*="css"] {
+            font-family: 'Inter', sans-serif;
+        }
+
         /* Sleek white circle background for logo */
         [data-testid="stImage"] img {
             background-color: #FFFFFF !important;
             border-radius: 50% !important;
-            padding: 3px !important;
+            padding: 4px !important;
             object-fit: contain !important;
-            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25) !important;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15) !important;
         }
 
-        /* Oswald font for School Header */
+        /* Oswald font for Main School Header */
         .school-header {
             font-family: 'Oswald', sans-serif !important;
-            font-size: 48px !important; 
+            font-size: 42px !important; 
             font-weight: 700 !important;
+            letter-spacing: 0.5px;
             color: var(--text-color) !important;
-            line-height: 1.1 !important;
-            margin-bottom: 0px !important;
-            padding-bottom: 0px !important;
+            line-height: 1.15 !important;
+            margin-bottom: 2px !important;
         }
         
         /* Subtitle */
         .portal-subtitle {
-            font-family: 'Source Sans Pro', sans-serif;
-            font-size: 20px !important;
+            font-family: 'Inter', sans-serif;
+            font-size: 17px !important;
+            font-weight: 500;
             color: var(--text-color) !important;
-            opacity: 0.85;
+            opacity: 0.75;
             margin-top: 0px !important;
+        }
+
+        /* KPI Metric Cards Styling */
+        [data-testid="stMetric"] {
+            background-color: rgba(125, 125, 125, 0.08);
+            border-radius: 12px;
+            padding: 14px 18px;
+            border: 1px solid rgba(125, 125, 125, 0.15);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        [data-testid="stMetric"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        [data-testid="stMetricLabel"] {
+            font-weight: 600 !important;
+            font-size: 13px !important;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+        }
+        [data-testid="stMetricValue"] {
+            font-family: 'Oswald', sans-serif !important;
+            font-size: 32px !important;
+            font-weight: 700 !important;
         }
 
         /* Vertically centers logo with text */
         [data-testid="stHorizontalBlock"] {
             align-items: center;
+        }
+
+        /* Footer styling */
+        .portal-footer {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.6;
+            font-size: 13px;
         }
     </style>
 """
@@ -71,7 +110,7 @@ def load_data(url):
         # dtype=str ensures numbers keep leading zeros (e.g. 0001 stays 0001)
         df = pd.read_csv(csv_url, dtype=str)
         df = df.fillna("N/A")
-        # STRIP LEADING/TRAILING SPACES FROM COLUMN HEADERS
+        # Strip leading/trailing spaces from headers
         df.columns = df.columns.str.strip()
         return df
     except Exception as e:
@@ -80,7 +119,7 @@ def load_data(url):
 
 df = load_data(GSHEET_URL)
 
-# --- LOCK ONTO 'REMARKS' OR 'REMARK' COLUMN ONLY ---
+# --- LOCATE 'REMARKS' OR 'REMARK' COLUMN ---
 target_remarks_col = None
 if not df.empty:
     for col in df.columns:
@@ -88,7 +127,7 @@ if not df.empty:
             target_remarks_col = col
             break
 
-# --- 3. BRANDED HEADER (LOGO + SCHOOL NAME) ---
+# --- 3. BRANDED HEADER ---
 col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
@@ -99,22 +138,44 @@ with col_logo:
 
 with col_title:
     st.markdown('<p class="school-header">EASTERN SAMAR NATIONAL COMPREHENSIVE HIGH SCHOOL</p>', unsafe_allow_html=True)
-    st.markdown('<p class="portal-subtitle">Document Status & Tracking Portal</p>', unsafe_allow_html=True)
+    st.markdown('<p class="portal-subtitle">📜 Records & Document Status Tracking Portal</p>', unsafe_allow_html=True)
 
 st.divider()
 
-# --- 4. SEARCH & FILTER CONTROLS ---
-st.markdown("### 🔍 Search & Filter")
-col1, col2 = st.columns([3, 1])
+# --- 4. SUMMARY METRICS (SUMMARY CARDS) ---
+if not df.empty:
+    total_docs = len(df)
+    pending_count = 0
+    returned_count = 0
+    released_count = 0
 
-with col1:
+    if target_remarks_col:
+        remarks_series = df[target_remarks_col].astype(str).str.strip().str.upper()
+        pending_count = (remarks_series.str.contains("PENDING", na=False)).sum()
+        returned_count = (remarks_series.str.contains("RETURNED", na=False)).sum()
+        released_count = (remarks_series.str.contains("RELEASED", na=False)).sum()
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("TOTAL RECORDS", total_docs)
+    m2.metric("⏳ PENDING", pending_count)
+    m3.metric("↩️ RETURNED", returned_count)
+    m4.metric("✅ RELEASED", released_count)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+# --- 5. SEARCH & FILTER CONTROLS ---
+st.markdown("### 🔍 Search & Filter Controls")
+
+col_search, col_filter = st.columns([3, 1])
+
+with col_search:
     search_query = st.text_input(
-        "🔍 Search", 
-        placeholder="Type TRF No, Report Name, or Source to filter...", 
+        "Search records", 
+        placeholder="Type TRF No, Document Name, or Source to search...", 
         label_visibility="collapsed"
     ).strip().lower()
 
-with col2:
+with col2 if 'col2' in locals() else col_filter:
     default_statuses = ["PENDING", "RETURNED", "RELEASED"]
     
     sheet_remarks = []
@@ -126,17 +187,16 @@ with col2:
             if str(r).strip().upper() not in ["N/A", "NAN", ""]
         ]
 
-    # Combines default statuses + distinct remarks from sheet
     combined_list = list(dict.fromkeys(default_statuses + sorted(sheet_remarks)))
     remark_options = ["All Remarks"] + combined_list
 
     selected_remark = st.selectbox("Filter by Remark", remark_options, label_visibility="collapsed")
 
-# --- 5. FILTERING LOGIC ---
+# --- 6. FILTERING LOGIC ---
 filtered_df = df.copy()
 
 if not filtered_df.empty:
-    # 1. Search Query Filter
+    # 1. Search Bar Filter across all text
     if search_query:
         mask_search = filtered_df.apply(
             lambda row: row.astype(str).str.lower().str.contains(search_query).any(), 
@@ -157,16 +217,27 @@ if not filtered_df.empty:
                 f"Detected columns: **{list(df.columns)}**"
             )
 
-# --- 6. RECORDBOOK DISPLAY ---
-st.subheader(f"📋 Tracked Documents ({len(filtered_df)} records)")
+# --- 7. RECORDBOOK DISPLAY ---
+st.markdown(f"#### 📋 Document Records ({len(filtered_df)} showing)")
 
 if not filtered_df.empty:
-    st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+    st.dataframe(
+        filtered_df, 
+        use_container_width=True, 
+        hide_index=True,
+        height=450
+    )
 else:
-    st.warning(f"❌ No records found with remark '{selected_remark}'.")
+    st.warning(f"❌ No records found matching your query/filter.")
 
-# Refresh Button
+# --- 8. FOOTER & REFRESH ---
 st.markdown("---")
-if st.button("🔄 Refresh Live Data"):
-    st.cache_data.clear()
-    st.rerun()
+col_bot1, col_bot2 = st.columns([4, 1])
+
+with col_bot1:
+    st.caption("Eastern Samar National Comprehensive High School • Document Management & Registrar Office")
+
+with col_bot2:
+    if st.button("🔄 Refresh Data", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
