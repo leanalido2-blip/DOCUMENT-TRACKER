@@ -12,34 +12,41 @@ st.set_page_config(
 # --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
 GSHEET_URL = "https://docs.google.com/spreadsheets/d/1Eu204mywqGj5ih3eCbpJOhTEaoaTP2du3i8hNPWUcCU/edit?usp=sharing"
 
-# --- 2. CUSTOM CSS FOR FONT & STYLING ---
-# We are importing the professional 'Oswald' font from Google Fonts
+# --- 2. CUSTOM CSS FOR CIRCULAR WHITE LOGO BADGE & FONT ---
 font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
 
-# CSS to apply the font, make it bigger, and handle vertical alignment
 custom_css = """
     <style>
-        /* Applies Oswald font to school name, makes it HUGE (55px) and bold */
+        /* Permanent White Circular Badge for the Logo */
+        [data-testid="stImage"] img {
+            background-color: #FFFFFF !important;
+            border-radius: 50% !important;
+            padding: 8px !important;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        /* Oswald font, large size, auto-adapts text color */
         .school-header {
             font-family: 'Oswald', sans-serif !important;
-            font-size: 55px !important; 
+            font-size: 50px !important; 
             font-weight: 700 !important;
-            color: white; /* Change color here if not using Dark Mode */
+            color: var(--text-color) !important;
             line-height: 1.1 !important;
             margin-bottom: 0px !important;
             padding-bottom: 0px !important;
         }
         
-        /* Styles the subtitle */
+        /* Subtitle */
         .portal-subtitle {
-            font-family: 'Source Sans Pro', sans-serif; /* Cleaner standard font */
+            font-family: 'Source Sans Pro', sans-serif;
             font-size: 20px !important;
-            opacity: 0.8;
-            margin-top: -5px !important;
+            color: var(--text-color) !important;
+            opacity: 0.85;
+            margin-top: 0px !important;
         }
 
-        /* Vertically centers the logo with the title */
+        /* Vertically centers logo with text */
         [data-testid="stHorizontalBlock"] {
             align-items: center;
         }
@@ -71,12 +78,11 @@ def load_data(url):
 df = load_data(GSHEET_URL)
 
 # --- 3. BRANDED HEADER (LOGO + SCHOOL NAME) ---
-col_logo, col_title = st.columns([1, 6]) # Adjusted layout to give title more room
+col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
-    # UPDATED FILENAME USED HERE
     if os.path.exists("logo-esnchs.png"):
-        st.image("logo-esnchs.png", width=120) # Slightly bigger logo to match text
+        st.image("logo-esnchs.png", width=120)
     else:
         st.title("🏫")
 
@@ -88,7 +94,6 @@ with col_title:
 st.divider()
 
 # --- 4. SEARCH & FILTER CONTROLS ---
-# Full visible recordbook requires a way to find things quickly
 st.markdown("### 🔍 Search & Filter")
 col1, col2 = st.columns([3, 1])
 
@@ -101,11 +106,9 @@ with col1:
 
 with col2:
     remark_options = ["All Remarks"]
-    # Dynamic fetching unique remarks if they exist
     if "Remark" in df.columns:
-        # Use .unique().tolist() for cleaner extraction
         opts = df["Remark"].unique().tolist()
-        if "N/A" in opts: opts.remove("N/A") # Clean up dropdown
+        if "N/A" in opts: opts.remove("N/A")
         remark_options += sorted(opts)
         
     selected_remark = st.selectbox("Filter by Remark", remark_options, label_visibility="collapsed")
@@ -115,14 +118,13 @@ filtered_df = df.copy()
 
 if not filtered_df.empty:
     if search_query:
-        # Searches across all columns
         mask = filtered_df.apply(lambda row: row.astype(str).str.lower().str.contains(search_query).any(), axis=1)
         filtered_df = filtered_df[mask]
 
     if selected_remark != "All Remarks" and "Remark" in filtered_df.columns:
         filtered_df = filtered_df[filtered_df["Remark"] == selected_remark]
 
-# --- 6. FULL RECORDBOOK DISPLAY (SHOWS ALL BY DEFAULT) ---
+# --- 6. RECORDBOOK DISPLAY ---
 st.subheader(f"📋 Tracked Documents ({len(filtered_df)} records)")
 
 if not filtered_df.empty:
