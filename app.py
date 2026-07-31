@@ -9,8 +9,44 @@ st.set_page_config(
     page_icon="📜"
 )
 
-# --- PASTE YOUR GOOGLE SHEET LINK HERE ---
+# --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
 GSHEET_URL = "https://docs.google.com/spreadsheets/d/1Eu204mywqGj5ih3eCbpJOhTEaoaTP2du3i8hNPWUcCU/edit?usp=sharing"
+
+# --- 2. CUSTOM CSS FOR FONT & STYLING ---
+# We are importing the professional 'Oswald' font from Google Fonts
+font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap"
+st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
+
+# CSS to apply the font, make it bigger, and handle vertical alignment
+custom_css = """
+    <style>
+        /* Applies Oswald font to school name, makes it HUGE (55px) and bold */
+        .school-header {
+            font-family: 'Oswald', sans-serif !important;
+            font-size: 55px !important; 
+            font-weight: 700 !important;
+            color: white; /* Change color here if not using Dark Mode */
+            line-height: 1.1 !important;
+            margin-bottom: 0px !important;
+            padding-bottom: 0px !important;
+        }
+        
+        /* Styles the subtitle */
+        .portal-subtitle {
+            font-family: 'Source Sans Pro', sans-serif; /* Cleaner standard font */
+            font-size: 20px !important;
+            opacity: 0.8;
+            margin-top: -5px !important;
+        }
+
+        /* Vertically centers the logo with the title */
+        [data-testid="stHorizontalBlock"] {
+            align-items: center;
+        }
+    </style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
+
 
 # Helper function to convert share link into live CSV format
 def get_csv_url(sheet_url):
@@ -34,50 +70,65 @@ def load_data(url):
 
 df = load_data(GSHEET_URL)
 
-# --- BRANDED HEADER (LOGO + SCHOOL NAME) ---
-col_logo, col_title = st.columns([1, 5])
+# --- 3. BRANDED HEADER (LOGO + SCHOOL NAME) ---
+col_logo, col_title = st.columns([1, 6]) # Adjusted layout to give title more room
 
 with col_logo:
-    # Looks for logo.png in your GitHub repository
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=110)
+    # UPDATED FILENAME USED HERE
+    if os.path.exists("logo-esnchs.png"):
+        st.image("logo-esnchs.png", width=120) # Slightly bigger logo to match text
     else:
         st.title("🏫")
 
 with col_title:
     # ✏️ REPLACE WITH YOUR ACTUAL SCHOOL / UNIVERSITY NAME BELOW:
-    st.markdown("## **EASTERN SAMAR NATIONAL COMPREHENSIVE HIGH SCHOOL**")
-    st.markdown("##### **Document Status & Tracking Portal**")
-
-st.info(
-    "💡 **How to check your document:** Type your **TRF No.**, **Name (Document Source)**, "
-    "or **Report Name (e.g., TOR, COG)** into the search bar below."
-)
+    st.markdown('<p class="school-header">EASTERN SAMAR NATIONAL COMPREHENSIVE HIGH SCHOOL</p>', unsafe_allow_html=True)
+    st.markdown('<p class="portal-subtitle">Document Status & Tracking Portal</p>', unsafe_allow_html=True)
 
 st.divider()
 
-# --- SEARCH INTERFACE ---
-search_query = st.text_input(
-    "🔍 Search Query", 
-    placeholder="Type TRF No, Report Name, or Source...", 
-    label_visibility="collapsed"
-).strip().lower()
+# --- 4. SEARCH & FILTER CONTROLS ---
+# Full visible recordbook requires a way to find things quickly
+st.markdown("### 🔍 Search & Filter")
+col1, col2 = st.columns([3, 1])
 
-# --- FILTERING & RESULTS ---
+with col1:
+    search_query = st.text_input(
+        "🔍 Search", 
+        placeholder="Type TRF No, Report Name, or Source to filter...", 
+        label_visibility="collapsed"
+    ).strip().lower()
+
+with col2:
+    remark_options = ["All Remarks"]
+    # Dynamic fetching unique remarks if they exist
+    if "Remark" in df.columns:
+        # Use .unique().tolist() for cleaner extraction
+        opts = df["Remark"].unique().tolist()
+        if "N/A" in opts: opts.remove("N/A") # Clean up dropdown
+        remark_options += sorted(opts)
+        
+    selected_remark = st.selectbox("Filter by Remark", remark_options, label_visibility="collapsed")
+
+# --- 5. FILTERING LOGIC ---
 filtered_df = df.copy()
 
-if search_query:
-    if not filtered_df.empty:
+if not filtered_df.empty:
+    if search_query:
+        # Searches across all columns
         mask = filtered_df.apply(lambda row: row.astype(str).str.lower().str.contains(search_query).any(), axis=1)
         filtered_df = filtered_df[mask]
-        
-        if not filtered_df.empty:
-            st.success(f"Found {len(filtered_df)} matching record(s):")
-            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
-        else:
-            st.warning("❌ No matching records found.")
+
+    if selected_remark != "All Remarks" and "Remark" in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df["Remark"] == selected_remark]
+
+# --- 6. FULL RECORDBOOK DISPLAY (SHOWS ALL BY DEFAULT) ---
+st.subheader(f"📋 Tracked Documents ({len(filtered_df)} records)")
+
+if not filtered_df.empty:
+    st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 else:
-    st.info("🔒 **Search Active:** Type your details in the search box above to display your document status.")
+    st.warning("❌ No matching records found.")
 
 # Refresh Button
 st.markdown("---")
