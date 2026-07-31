@@ -12,6 +12,13 @@ st.set_page_config(
 # --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
 GSHEET_URL = "https://docs.google.com/spreadsheets/d/1Eu204mywqGj5ih3eCbpJOhTEaoaTP2du3i8hNPWUcCU/edit?usp=sharing"
 
+# Initialize Filter Session State
+if "selected_remark" not in st.session_state:
+    st.session_state["selected_remark"] = "All Remarks"
+
+def set_status_filter(status_name):
+    st.session_state["selected_remark"] = status_name
+
 # --- 2. ADVANCED STYLING & CUSTOM CSS ---
 font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
@@ -53,29 +60,27 @@ custom_css = """
             margin-top: 0px !important;
         }
 
-        /* KPI Metric Cards Styling */
-        [data-testid="stMetric"] {
-            background-color: rgba(125, 125, 125, 0.08);
-            border-radius: 12px;
-            padding: 14px 18px;
-            border: 1px solid rgba(125, 125, 125, 0.15);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        [data-testid="stMetric"]:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-        }
-        [data-testid="stMetricLabel"] {
+        /* Make KPI buttons look like interactive cards */
+        div[data-testid="stColumn"] div[data-testid="stButton"] > button {
+            width: 100% !important;
+            height: 85px !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(125, 125, 125, 0.25) !important;
+            background-color: rgba(125, 125, 125, 0.06) !important;
+            color: var(--text-color) !important;
             font-weight: 600 !important;
-            font-size: 13px !important;
-            letter-spacing: 0.5px;
-            opacity: 0.8;
+            font-size: 15px !important;
+            white-space: pre-wrap !important;
+            line-height: 1.4 !important;
+            transition: all 0.2s ease-in-out !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03) !important;
         }
-        [data-testid="stMetricValue"] {
-            font-family: 'Oswald', sans-serif !important;
-            font-size: 32px !important;
-            font-weight: 700 !important;
+        
+        div[data-testid="stColumn"] div[data-testid="stButton"] > button:hover {
+            border-color: rgba(125, 125, 125, 0.5) !important;
+            background-color: rgba(125, 125, 125, 0.15) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
         }
 
         /* Vertically centers logo with text */
@@ -134,7 +139,7 @@ with col_title:
 
 st.divider()
 
-# --- 4. SUMMARY METRICS (SUMMARY CARDS) ---
+# --- 4. CLICKABLE KPI SUMMARY CARDS ---
 if not df.empty:
     total_docs = len(df)
     pending_count = 0
@@ -148,10 +153,35 @@ if not df.empty:
         released_count = (remarks_series.str.contains("RELEASED", na=False)).sum()
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("TOTAL RECORDS", total_docs)
-    m2.metric("⏳ PENDING", pending_count)
-    m3.metric("↩️ RETURNED", returned_count)
-    m4.metric("✅ RELEASED", released_count)
+
+    with m1:
+        st.button(
+            f"📊 TOTAL RECORDS\n{total_docs}", 
+            on_click=set_status_filter, 
+            args=("All Remarks",),
+            use_container_width=True
+        )
+    with m2:
+        st.button(
+            f"⏳ PENDING\n{pending_count}", 
+            on_click=set_status_filter, 
+            args=("PENDING",),
+            use_container_width=True
+        )
+    with m3:
+        st.button(
+            f"↩️ RETURNED\n{returned_count}", 
+            on_click=set_status_filter, 
+            args=("RETURNED",),
+            use_container_width=True
+        )
+    with m4:
+        st.button(
+            f"✅ RELEASED\n{released_count}", 
+            on_click=set_status_filter, 
+            args=("RELEASED",),
+            use_container_width=True
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -182,7 +212,12 @@ with col_filter:
     combined_list = list(dict.fromkeys(default_statuses + sorted(sheet_remarks)))
     remark_options = ["All Remarks"] + combined_list
 
-    selected_remark = st.selectbox("Filter by Remark", remark_options, label_visibility="collapsed")
+    selected_remark = st.selectbox(
+        "Filter by Remark", 
+        remark_options, 
+        key="selected_remark",
+        label_visibility="collapsed"
+    )
 
 # --- 6. FILTERING LOGIC ---
 filtered_df = df.copy()
