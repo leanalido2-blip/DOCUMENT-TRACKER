@@ -6,7 +6,7 @@ import os
 st.set_page_config(
     page_title="Document Tracking Portal", 
     layout="wide", 
-    page_icon="📜"
+    page_icon="ESNCHS-LOGO.png"
 )
 
 # --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
@@ -82,8 +82,9 @@ df = load_data(GSHEET_URL)
 col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
-    if os.path.exists("logo-esnchs.png"):
-        st.image("logo-esnchs.png", width=110)
+    # MATCHES EXACT FILENAME: ESNCHS-LOGO.png
+    if os.path.exists("ESNCHS-LOGO.png"):
+        st.image("ESNCHS-LOGO.png", width=110)
     else:
         st.title("🏫")
 
