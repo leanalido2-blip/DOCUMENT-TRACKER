@@ -71,6 +71,8 @@ def load_data(url):
         # dtype=str ensures numbers keep leading zeros (e.g. 0001 stays 0001)
         df = pd.read_csv(csv_url, dtype=str)
         df = df.fillna("N/A")
+        # STRIP LEADING/TRAILING SPACES FROM COLUMN HEADERS
+        df.columns = df.columns.str.strip()
         return df
     except Exception as e:
         st.error("⚠️ Unable to load Google Sheet data. Please check your share settings.")
@@ -78,23 +80,13 @@ def load_data(url):
 
 df = load_data(GSHEET_URL)
 
-# --- DYNAMICALLY DETECT REMARK/STATUS COLUMN ---
-remark_col = None
+# --- LOCK ONTO 'REMARKS' OR 'REMARK' COLUMN ONLY ---
+target_remarks_col = None
 if not df.empty:
-    possible_names = [
-        "remark", "remarks", "status", "document status", 
-        "doc status", "action", "action taken", "state", "remarks/status"
-    ]
     for col in df.columns:
-        if col.strip().lower() in possible_names:
-            remark_col = col
+        if col.upper() in ["REMARKS", "REMARK"]:
+            target_remarks_col = col
             break
-            
-    if not remark_col:
-        for col in df.columns:
-            if "remark" in col.lower() or "status" in col.lower() or "action" in col.lower():
-                remark_col = col
-                break
 
 # --- 3. BRANDED HEADER (LOGO + SCHOOL NAME) ---
 col_logo, col_title = st.columns([1, 6])
@@ -126,14 +118,15 @@ with col2:
     default_statuses = ["PENDING", "RETURNED", "RELEASED"]
     
     sheet_remarks = []
-    if remark_col:
+    if target_remarks_col:
+        raw_vals = df[target_remarks_col].dropna().unique()
         sheet_remarks = [
             str(r).strip().upper() 
-            for r in df[remark_col].unique() 
+            for r in raw_vals 
             if str(r).strip().upper() not in ["N/A", "NAN", ""]
         ]
 
-    # Combine defaults + actual sheet statuses without duplicates
+    # Combines default statuses + distinct remarks from sheet
     combined_list = list(dict.fromkeys(default_statuses + sorted(sheet_remarks)))
     remark_options = ["All Remarks"] + combined_list
 
@@ -143,7 +136,7 @@ with col2:
 filtered_df = df.copy()
 
 if not filtered_df.empty:
-    # 1. Search Bar Filter (Searches across all text in the table)
+    # 1. Search Query Filter
     if search_query:
         mask_search = filtered_df.apply(
             lambda row: row.astype(str).str.lower().str.contains(search_query).any(), 
@@ -151,19 +144,18 @@ if not filtered_df.empty:
         )
         filtered_df = filtered_df[mask_search]
 
-    # 2. Status Dropdown Filter (Automatic Fail-Safe)
+    # 2. Strict REMARKS Column Filter
     if selected_remark != "All Remarks":
-        if remark_col and remark_col in filtered_df.columns:
-            # Filter specifically by the status column
-            mask_status = filtered_df[remark_col].astype(str).str.upper().str.contains(selected_remark.upper(), na=False)
-            filtered_df = filtered_df[mask_status]
-        else:
-            # Fallback: Search across ALL columns for the selected status keyword
-            mask_status = filtered_df.apply(
-                lambda row: row.astype(str).str.upper().str.contains(selected_remark.upper()).any(), 
-                axis=1
+        if target_remarks_col and target_remarks_col in filtered_df.columns:
+            mask_remark = filtered_df[target_remarks_col].astype(str).str.strip().str.upper().str.contains(
+                selected_remark.upper(), na=False
             )
-            filtered_df = filtered_df[mask_status]
+            filtered_df = filtered_df[mask_remark]
+        else:
+            st.error(
+                f"⚠️ Could not find a column named 'REMARKS' or 'REMARK' in your Google Sheet. "
+                f"Detected columns: **{list(df.columns)}**"
+            )
 
 # --- 6. RECORDBOOK DISPLAY ---
 st.subheader(f"📋 Tracked Documents ({len(filtered_df)} records)")
@@ -171,7 +163,7 @@ st.subheader(f"📋 Tracked Documents ({len(filtered_df)} records)")
 if not filtered_df.empty:
     st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 else:
-    st.warning(f"❌ No records found with status '{selected_remark}'.")
+    st.warning(f"❌ No records found with remark '{selected_remark}'.")
 
 # Refresh Button
 st.markdown("---")
