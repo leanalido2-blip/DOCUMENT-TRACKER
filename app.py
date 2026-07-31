@@ -60,7 +60,7 @@ custom_css = """
             margin-top: 0px !important;
         }
 
-        /* Bold & Prominent KPI Card Buttons using Oswald Font */
+        /* Bold & Centered KPI Card Buttons using Oswald Font */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button {
             width: 100% !important;
             height: 110px !important;
@@ -68,12 +68,17 @@ custom_css = """
             border: 1px solid rgba(125, 125, 125, 0.2) !important;
             background-color: rgba(125, 125, 125, 0.06) !important;
             color: var(--text-color) !important;
-            padding: 14px 20px !important;
+            padding: 12px 16px !important;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
         }
 
-        /* Target all text elements inside the card button for Oswald font & bold sizing */
+        /* Enforce absolute centering on all text elements inside the cards */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button p,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button div,
@@ -81,11 +86,13 @@ custom_css = """
             font-family: 'Oswald', sans-serif !important;
             font-weight: 700 !important;
             font-size: 28px !important;
-            line-height: 1.15 !important;
+            line-height: 1.2 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.5px !important;
-            text-align: left !important;
+            text-align: center !important;
             white-space: pre-wrap !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         div[data-testid="stColumn"] div[data-testid="stButton"] > button:hover {
@@ -274,7 +281,7 @@ if not filtered_df.empty:
 else:
     st.warning("❌ No records found matching your query/filter.")
 
-# Left-aligned Refresh button directly below table
+# Refresh Data button
 if st.button("Refresh Data"):
     st.cache_data.clear()
     st.rerun()
