@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
-GSHEET_URL = "https://docs.google.com/spreadsheets/d/1Eu204mywqGj5ih3eCbpJOhTEaoaTP2du3i8hNPWUcCU/edit?usp=sharing"
+GSHEET_URL = "YOUR_GOOGLE_SHEET_LINK_HERE"
 
 # Initialize Filter Session State
 if "selected_remark" not in st.session_state:
@@ -60,7 +60,7 @@ custom_css = """
             margin-top: 0px !important;
         }
 
-        /* Minimalist & Compact KPI Cards (No Colors) */
+        /* Minimalist & Compact KPI Cards */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button {
             width: 100% !important;
             height: 78px !important;
@@ -102,9 +102,9 @@ custom_css = """
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
         }
 
-        /* Vertically center logo with title */
-        [data-testid="stHorizontalBlock"] {
-            align-items: center;
+        /* Full width dataframe container */
+        [data-testid="stDataFrame"] {
+            width: 100% !important;
         }
     </style>
 """
@@ -118,14 +118,24 @@ def get_csv_url(sheet_url):
         return f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv"
     return sheet_url
 
-# Load live data from Google Sheets
+# Load live data from Google Sheets with strict column cleaning
 @st.cache_data(ttl=10)
 def load_data(url):
     try:
         csv_url = get_csv_url(url)
         df = pd.read_csv(csv_url, dtype=str)
+        
+        # 1. Clean column headers
+        df.columns = df.columns.astype(str).str.strip()
+        
+        # 2. Filter out phantom 'Unnamed' columns from Google Sheets
+        df = df.loc[:, ~df.columns.str.contains('^Unnamed', case=False, na=False)]
+        df = df.loc[:, df.columns != '']
+        
+        # 3. Clean up empty rows & fill missing values
+        df = df.dropna(how='all')
         df = df.fillna("N/A")
-        df.columns = df.columns.str.strip()
+        
         return df
     except Exception as e:
         st.error("⚠️ Unable to load Google Sheet data. Please check your share settings.")
@@ -156,7 +166,7 @@ with col_title:
 
 st.divider()
 
-# --- 4. CLICKABLE MINIMALIST DASHBOARD TILES ---
+# --- 4. CLICKABLE DASHBOARD TILES ---
 if not df.empty:
     total_docs = len(df)
     pending_count = 0
@@ -260,10 +270,34 @@ if not filtered_df.empty:
 st.markdown(f"#### 📋 Document Records ({len(filtered_df)} showing)")
 
 if not filtered_df.empty:
+    # Dynamically calculate sentence length for each column to auto-adapt widths
+    column_configs = {}
+    for col in filtered_df.columns:
+        # Get max string length in the column (comparing header name vs content)
+        max_char_len = max(
+            filtered_df[col].astype(str).map(len).max() if len(filtered_df) > 0 else 0,
+            len(str(col))
+        )
+        
+        # Assign dynamic width based on sentence length
+        if max_char_len > 40:
+            assigned_width = "large"
+        elif max_char_len > 18:
+            assigned_width = "medium"
+        else:
+            assigned_width = "small"
+            
+        column_configs[col] = st.column_config.TextColumn(
+            col,
+            width=assigned_width,
+            help="Double-click any cell to expand and copy full text"
+        )
+
     st.dataframe(
         filtered_df, 
         use_container_width=True, 
-        hide_index=True
+        hide_index=True,
+        column_config=column_configs
     )
 else:
     st.warning("❌ No records found matching your query/filter.")
