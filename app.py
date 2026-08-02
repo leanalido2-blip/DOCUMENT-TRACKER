@@ -19,7 +19,7 @@ if "selected_remark" not in st.session_state:
 def set_status_filter(status_name):
     st.session_state["selected_remark"] = status_name
 
-# --- 2. ADVANCED STYLING & CUSTOM CSS ---
+# --- 2. ADVANCED STYLING & CUSTOM CSS (LIGHT & DARK MODE ADAPTIVE) ---
 font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
 
@@ -28,6 +28,7 @@ custom_css = """
         /* Base Typography */
         html, body, [class*="css"] {
             font-family: 'Inter', sans-serif;
+            color: var(--text-color) !important;
         }
 
         /* Sleek white circle background for logo */
@@ -56,7 +57,7 @@ custom_css = """
             font-size: 16px !important;
             font-weight: 500 !important;
             color: var(--text-color) !important;
-            opacity: 0.75;
+            opacity: 0.85;
             margin-top: 0px !important;
         }
 
@@ -65,8 +66,8 @@ custom_css = """
             width: 100% !important;
             height: 78px !important;
             border-radius: 10px !important;
-            border: 1px solid rgba(125, 125, 125, 0.22) !important;
-            background-color: rgba(125, 125, 125, 0.03) !important;
+            border: 1px solid rgba(128, 128, 128, 0.3) !important;
+            background-color: rgba(128, 128, 128, 0.08) !important;
             color: var(--text-color) !important;
             padding: 8px 12px !important;
             transition: all 0.2s ease-in-out !important;
@@ -91,26 +92,27 @@ custom_css = """
             letter-spacing: 0.5px !important;
             text-align: center !important;
             white-space: pre-wrap !important;
+            color: var(--text-color) !important;
             margin: 0 !important;
             padding: 0 !important;
         }
 
         div[data-testid="stColumn"] div[data-testid="stButton"] > button:hover {
             transform: translateY(-2px) !important;
-            border-color: rgba(125, 125, 125, 0.5) !important;
-            background-color: rgba(125, 125, 125, 0.08) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+            border-color: rgba(128, 128, 128, 0.6) !important;
+            background-color: rgba(128, 128, 128, 0.16) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
 
-        /* --- WRAPPING HTML TABLE STYLES --- */
+        /* --- DARK & LIGHT MODE ADAPTIVE HTML TABLE --- */
         .table-container {
             width: 100%;
             max-height: 620px;
             overflow-y: auto;
             overflow-x: auto;
-            border: 1px solid rgba(125, 125, 125, 0.25);
+            border: 1px solid rgba(128, 128, 128, 0.3);
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             margin-top: 10px;
         }
 
@@ -119,14 +121,14 @@ custom_css = """
             border-collapse: collapse;
             font-family: 'Inter', sans-serif;
             font-size: 14px;
-            color: var(--text-color, #1f2937);
+            color: var(--text-color) !important;
         }
 
         table.record-table th {
             position: sticky;
             top: 0;
-            background-color: rgba(125, 125, 125, 0.12);
-            backdrop-filter: blur(8px);
+            background-color: rgba(128, 128, 128, 0.22) !important;
+            color: var(--text-color) !important;
             font-family: 'Oswald', sans-serif;
             font-weight: 700;
             font-size: 15px;
@@ -134,16 +136,17 @@ custom_css = """
             letter-spacing: 0.5px;
             padding: 12px 16px;
             text-align: left;
-            border-bottom: 2px solid rgba(125, 125, 125, 0.3);
+            border-bottom: 2px solid rgba(128, 128, 128, 0.4);
             white-space: nowrap;
             z-index: 5;
         }
 
         table.record-table td {
             padding: 12px 16px;
-            border-bottom: 1px solid rgba(125, 125, 125, 0.15);
+            border-bottom: 1px solid rgba(128, 128, 128, 0.2);
             vertical-align: top;
-            /* FORCES TEXT WRAPPING AND DROPPING DOWN TO NEW LINES */
+            color: var(--text-color) !important;
+            /* WRAPS TEXT NATURALLY DOWN TO NEW LINES */
             white-space: normal !important;
             word-wrap: break-word !important;
             word-break: break-word !important;
@@ -152,7 +155,7 @@ custom_css = """
         }
 
         table.record-table tr:hover td {
-            background-color: rgba(125, 125, 125, 0.06);
+            background-color: rgba(128, 128, 128, 0.12) !important;
         }
     </style>
 """
@@ -318,7 +321,7 @@ if not filtered_df.empty:
 st.markdown(f"#### 📋 Document Records ({len(filtered_df)} showing)")
 
 if not filtered_df.empty:
-    # Convert Dataframe to HTML table with strict text wrapping rules
+    # Convert Dataframe to HTML table with text wrapping and theme adaptivity
     html_table = filtered_df.to_html(index=False, classes="record-table", escape=True)
     st.markdown(f'<div class="table-container">{html_table}</div>', unsafe_allow_html=True)
 else:
