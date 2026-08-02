@@ -102,9 +102,57 @@ custom_css = """
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
         }
 
-        /* Full width dataframe container */
-        [data-testid="stDataFrame"] {
-            width: 100% !important;
+        /* --- WRAPPING HTML TABLE STYLES --- */
+        .table-container {
+            width: 100%;
+            max-height: 620px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid rgba(125, 125, 125, 0.25);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            margin-top: 10px;
+        }
+
+        table.record-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--text-color, #1f2937);
+        }
+
+        table.record-table th {
+            position: sticky;
+            top: 0;
+            background-color: rgba(125, 125, 125, 0.12);
+            backdrop-filter: blur(8px);
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid rgba(125, 125, 125, 0.3);
+            white-space: nowrap;
+            z-index: 5;
+        }
+
+        table.record-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(125, 125, 125, 0.15);
+            vertical-align: top;
+            /* FORCES TEXT WRAPPING AND DROPPING DOWN TO NEW LINES */
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            word-break: break-word !important;
+            line-height: 1.45;
+            min-width: 120px;
+        }
+
+        table.record-table tr:hover td {
+            background-color: rgba(125, 125, 125, 0.06);
         }
     </style>
 """
@@ -270,37 +318,13 @@ if not filtered_df.empty:
 st.markdown(f"#### 📋 Document Records ({len(filtered_df)} showing)")
 
 if not filtered_df.empty:
-    # Dynamically calculate sentence length for each column to auto-adapt widths
-    column_configs = {}
-    for col in filtered_df.columns:
-        # Get max string length in the column (comparing header name vs content)
-        max_char_len = max(
-            filtered_df[col].astype(str).map(len).max() if len(filtered_df) > 0 else 0,
-            len(str(col))
-        )
-        
-        # Assign dynamic width based on sentence length
-        if max_char_len > 40:
-            assigned_width = "large"
-        elif max_char_len > 18:
-            assigned_width = "medium"
-        else:
-            assigned_width = "small"
-            
-        column_configs[col] = st.column_config.TextColumn(
-            col,
-            width=assigned_width,
-            help="Double-click any cell to expand and copy full text"
-        )
-
-    st.dataframe(
-        filtered_df, 
-        use_container_width=True, 
-        hide_index=True,
-        column_config=column_configs
-    )
+    # Convert Dataframe to HTML table with strict text wrapping rules
+    html_table = filtered_df.to_html(index=False, classes="record-table", escape=True)
+    st.markdown(f'<div class="table-container">{html_table}</div>', unsafe_allow_html=True)
 else:
     st.warning("❌ No records found matching your query/filter.")
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 # Refresh Data button
 if st.button("Refresh Data"):
