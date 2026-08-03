@@ -104,7 +104,7 @@ custom_css = """
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
 
-        /* --- DARK & LIGHT MODE ADAPTIVE HTML TABLE --- */
+        /* --- CLEAN SCROLLABLE TABLE CONTAINER --- */
         .table-container {
             width: 100%;
             max-height: 620px;
@@ -112,45 +112,45 @@ custom_css = """
             overflow-x: auto;
             border: 1px solid rgba(128, 128, 128, 0.3);
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             margin-top: 10px;
+            background-color: var(--background-color);
         }
 
         table.record-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             font-family: 'Inter', sans-serif;
             font-size: 14px;
             color: var(--text-color) !important;
         }
 
+        /* STANDARD NON-STICKY HEADER (Scrolls up with the table) */
         table.record-table th {
-            position: sticky;
-            top: 0;
-            background-color: rgba(128, 128, 128, 0.22) !important;
+            background-color: var(--secondary-background-color) !important;
             color: var(--text-color) !important;
             font-family: 'Oswald', sans-serif;
             font-weight: 700;
             font-size: 15px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 12px 16px;
+            padding: 14px 16px;
             text-align: left;
             border-bottom: 2px solid rgba(128, 128, 128, 0.4);
             white-space: nowrap;
-            z-index: 5;
         }
 
+        /* CLEAN CELL SPACING AND PRESERVED NEWLINES */
         table.record-table td {
             padding: 12px 16px;
             border-bottom: 1px solid rgba(128, 128, 128, 0.2);
             vertical-align: top;
             color: var(--text-color) !important;
-            /* WRAPS TEXT NATURALLY DOWN TO NEW LINES */
-            white-space: normal !important;
+            white-space: pre-wrap !important; /* Converts \\n into clean bullet line breaks */
             word-wrap: break-word !important;
             word-break: break-word !important;
-            line-height: 1.45;
+            line-height: 1.5;
             min-width: 120px;
         }
 
@@ -186,6 +186,10 @@ def load_data(url):
         # 3. Clean up empty rows & fill missing values
         df = df.dropna(how='all')
         df = df.fillna("N/A")
+
+        # 4. Convert literal '\n' string codes into real line breaks
+        for col in df.columns:
+            df[col] = df[col].astype(str).str.replace(r'\\n', '\n', regex=True)
         
         return df
     except Exception as e:
@@ -321,7 +325,7 @@ if not filtered_df.empty:
 st.markdown(f"#### 📋 Document Records ({len(filtered_df)} showing)")
 
 if not filtered_df.empty:
-    # Convert Dataframe to HTML table with text wrapping and theme adaptivity
+    # Render table HTML cleanly
     html_table = filtered_df.to_html(index=False, classes="record-table", escape=True)
     st.markdown(f'<div class="table-container">{html_table}</div>', unsafe_allow_html=True)
 else:
