@@ -105,7 +105,7 @@ custom_css = """
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
 
-        /* --- BULLETPROOF ULTRA-CLEAN TABLE CONTAINER --- */
+        /* --- BULLETPROOF FLEXIBLE TABLE CONTAINER --- */
         .table-container {
             width: 100%;
             max-height: 650px;
@@ -120,22 +120,14 @@ custom_css = """
 
         table.record-table {
             width: 100%;
-            table-layout: fixed; /* Locks column proportions perfectly */
+            min-width: 1100px; /* Prevents squishing on any display */
             border-collapse: collapse;
             font-family: 'Inter', sans-serif;
             font-size: 13.5px;
             color: var(--text-color) !important;
         }
 
-        /* Strict Percentage Width Proportions */
-        table.record-table th:nth-child(1), table.record-table td:nth-child(1) { width: 7%; }   /* TRF NO */
-        table.record-table th:nth-child(2), table.record-table td:nth-child(2) { width: 10%; }  /* DATE */
-        table.record-table th:nth-child(3), table.record-table td:nth-child(3) { width: 20%; }  /* SOURCE */
-        table.record-table th:nth-child(4), table.record-table td:nth-child(4) { width: 35%; }  /* REPORTS SUBMITTED */
-        table.record-table th:nth-child(5), table.record-table td:nth-child(5) { width: 10%; }  /* DESTINATION */
-        table.record-table th:nth-child(6), table.record-table td:nth-child(6) { width: 9%; }   /* STATUS */
-        table.record-table th:nth-child(7), table.record-table td:nth-child(7) { width: 9%; }   /* REMARKS */
-
+        /* HEADER CELL STYLING - NEVER STACKS VERTICALLY */
         table.record-table th {
             background-color: var(--secondary-background-color) !important;
             color: var(--text-color) !important;
@@ -144,19 +136,26 @@ custom_css = """
             font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 12px 14px;
+            padding: 12px 16px;
             text-align: left;
             border-bottom: 2px solid rgba(128, 128, 128, 0.35);
+            white-space: nowrap !important; /* Forces headers to stay on a single line */
         }
 
+        /* DATA CELL STYLING */
         table.record-table td {
-            padding: 11px 14px;
+            padding: 12px 16px;
             border-bottom: 1px solid rgba(128, 128, 128, 0.15);
             vertical-align: top;
             color: var(--text-color) !important;
             word-wrap: break-word !important;
             overflow-wrap: break-word;
             line-height: 1.45;
+        }
+
+        /* Give long description columns room to breathe */
+        table.record-table td:nth-child(4) {
+            min-width: 320px;
         }
 
         /* Subtle Zebra Striping for readability */
