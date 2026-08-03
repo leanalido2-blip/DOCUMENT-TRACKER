@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import html
 import os
 
 # Page Configuration
@@ -19,7 +20,7 @@ if "selected_remark" not in st.session_state:
 def set_status_filter(status_name):
     st.session_state["selected_remark"] = status_name
 
-# --- 2. ADVANCED STYLING & CUSTOM CSS (LIGHT & DARK MODE ADAPTIVE) ---
+# --- 2. ADVANCED STYLING & CUSTOM CSS (DARK & LIGHT MODE ADAPTIVE) ---
 font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
 
@@ -79,7 +80,7 @@ custom_css = """
             text-align: center !important;
         }
 
-        /* Enforce Oswald Font, Bold Weight, and Perfectly Centered Text */
+        /* Enforce Oswald Font on Tiles */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button p,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button div,
@@ -104,57 +105,66 @@ custom_css = """
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
 
-        /* --- CLEAN SCROLLABLE TABLE CONTAINER --- */
+        /* --- BULLETPROOF ULTRA-CLEAN TABLE CONTAINER --- */
         .table-container {
             width: 100%;
-            max-height: 620px;
+            max-height: 650px;
             overflow-y: auto;
             overflow-x: auto;
-            border: 1px solid rgba(128, 128, 128, 0.3);
+            border: 1px solid rgba(128, 128, 128, 0.25);
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
             margin-top: 10px;
             background-color: var(--background-color);
         }
 
         table.record-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            table-layout: fixed; /* Locks column proportions perfectly */
+            border-collapse: collapse;
             font-family: 'Inter', sans-serif;
-            font-size: 14px;
+            font-size: 13.5px;
             color: var(--text-color) !important;
         }
 
-        /* STANDARD NON-STICKY HEADER (Scrolls up with the table) */
+        /* Strict Percentage Width Proportions */
+        table.record-table th:nth-child(1), table.record-table td:nth-child(1) { width: 7%; }   /* TRF NO */
+        table.record-table th:nth-child(2), table.record-table td:nth-child(2) { width: 10%; }  /* DATE */
+        table.record-table th:nth-child(3), table.record-table td:nth-child(3) { width: 20%; }  /* SOURCE */
+        table.record-table th:nth-child(4), table.record-table td:nth-child(4) { width: 35%; }  /* REPORTS SUBMITTED */
+        table.record-table th:nth-child(5), table.record-table td:nth-child(5) { width: 10%; }  /* DESTINATION */
+        table.record-table th:nth-child(6), table.record-table td:nth-child(6) { width: 9%; }   /* STATUS */
+        table.record-table th:nth-child(7), table.record-table td:nth-child(7) { width: 9%; }   /* REMARKS */
+
         table.record-table th {
             background-color: var(--secondary-background-color) !important;
             color: var(--text-color) !important;
             font-family: 'Oswald', sans-serif;
             font-weight: 700;
-            font-size: 15px;
+            font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 14px 16px;
+            padding: 12px 14px;
             text-align: left;
-            border-bottom: 2px solid rgba(128, 128, 128, 0.4);
-            white-space: nowrap;
+            border-bottom: 2px solid rgba(128, 128, 128, 0.35);
         }
 
-        /* CLEAN CELL SPACING AND PRESERVED NEWLINES */
         table.record-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
             vertical-align: top;
             color: var(--text-color) !important;
-            white-space: pre-wrap !important; /* Converts \\n into clean bullet line breaks */
             word-wrap: break-word !important;
-            word-break: break-word !important;
-            line-height: 1.5;
-            min-width: 120px;
+            overflow-wrap: break-word;
+            line-height: 1.45;
         }
 
-        table.record-table tr:hover td {
+        /* Subtle Zebra Striping for readability */
+        table.record-table tbody tr:nth-child(even) {
+            background-color: rgba(128, 128, 128, 0.04);
+        }
+
+        table.record-table tbody tr:hover td {
             background-color: rgba(128, 128, 128, 0.12) !important;
         }
     </style>
@@ -186,10 +196,6 @@ def load_data(url):
         # 3. Clean up empty rows & fill missing values
         df = df.dropna(how='all')
         df = df.fillna("N/A")
-
-        # 4. Convert literal '\n' string codes into real line breaks
-        for col in df.columns:
-            df[col] = df[col].astype(str).str.replace(r'\\n', '\n', regex=True)
         
         return df
     except Exception as e:
@@ -325,9 +331,18 @@ if not filtered_df.empty:
 st.markdown(f"#### 📋 Document Records ({len(filtered_df)} showing)")
 
 if not filtered_df.empty:
-    # Render table HTML cleanly
-    html_table = filtered_df.to_html(index=False, classes="record-table", escape=True)
-    st.markdown(f'<div class="table-container">{html_table}</div>', unsafe_allow_html=True)
+    # Format text cells to safely convert literal \n strings into HTML <br> tags
+    def format_cell_html(val):
+        escaped_val = html.escape(str(val))
+        return escaped_val.replace('\\n', '<br>').replace('\n', '<br>')
+
+    html_formatted_df = filtered_df.copy()
+    for col in html_formatted_df.columns:
+        html_formatted_df[col] = html_formatted_df[col].apply(format_cell_html)
+
+    # Render clean HTML table
+    raw_table_html = html_formatted_df.to_html(index=False, classes="record-table", escape=False)
+    st.markdown(f'<div class="table-container">{raw_table_html}</div>', unsafe_allow_html=True)
 else:
     st.warning("❌ No records found matching your query/filter.")
 
