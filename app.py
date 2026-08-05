@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import html
+import math
 import os
 
 # Page Configuration
@@ -13,12 +14,16 @@ st.set_page_config(
 # --- 1. PASTE YOUR GOOGLE SHEET LINK HERE ---
 GSHEET_URL = "https://docs.google.com/spreadsheets/d/1Eu204mywqGj5ih3eCbpJOhTEaoaTP2du3i8hNPWUcCU/edit?usp=sharing"
 
-# Initialize Filter Session State
+# Initialize Session State Variables
 if "selected_remark" not in st.session_state:
     st.session_state["selected_remark"] = "All Remarks"
 
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = 1
+
 def set_status_filter(status_name):
     st.session_state["selected_remark"] = status_name
+    st.session_state["current_page"] = 1  # Reset to page 1 on filter click
 
 # --- 2. ADVANCED STYLING & CUSTOM CSS ---
 font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"
@@ -105,7 +110,7 @@ custom_css = """
         /* --- ROCK-SOLID TABLE CONTAINER --- */
         .table-wrapper {
             width: 100%;
-            max-height: 580px;
+            max-height: 620px;
             overflow-y: auto;
             overflow-x: auto;
             border: 1px solid rgba(128, 128, 128, 0.3);
@@ -139,7 +144,7 @@ custom_css = """
             padding: 12px 14px;
             text-align: left;
             border-bottom: 2px solid rgba(128, 128, 128, 0.4);
-            white-space: nowrap !important; /* Header text will NEVER stack vertically */
+            white-space: nowrap !important;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
@@ -154,7 +159,7 @@ custom_css = """
             word-break: break-word;
         }
 
-        /* Specific column constraints to stop awkward stretching */
+        /* Column Constraints */
         table.record-table td:nth-child(1) { min-width: 80px; width: 80px; }   /* TRF NO */
         table.record-table td:nth-child(2) { min-width: 100px; width: 100px; } /* DATE */
         table.record-table td:nth-child(3) { min-width: 180px; }              /* SOURCE */
@@ -308,6 +313,14 @@ with col_filter:
         label_visibility="collapsed"
     )
 
+# Reset page to 1 whenever search query or remark filter changes
+if ("last_search" in st.session_state and st.session_state["last_search"] != search_query) or \
+   ("last_remark" in st.session_state and st.session_state["last_remark"] != selected_remark):
+    st.session_state["current_page"] = 1
+
+st.session_state["last_search"] = search_query
+st.session_state["last_remark"] = selected_remark
+
 # --- 6. FILTERING LOGIC ---
 filtered_df = df.copy()
 
@@ -328,11 +341,27 @@ if not filtered_df.empty:
             )
             filtered_df = filtered_df[mask_remark]
 
-# --- 7. RECORDBOOK DISPLAY ---
-st.markdown(f"#### 📋 Document Records ({len(filtered_df)} showing)")
+# --- 7. PAGINATION PREPARATION ---
+ITEMS_PER_PAGE = 15
+total_items = len(filtered_df)
+total_pages = max(1, math.ceil(total_items / ITEMS_PER_PAGE))
 
-if not filtered_df.empty:
-    # Function to cleanly format text & split multiline entries into clean bullet points
+# Keep current page within valid bounds
+if st.session_state["current_page"] > total_pages:
+    st.session_state["current_page"] = total_pages
+
+current_page = st.session_state["current_page"]
+
+# Slice dataframe for current page
+start_idx = (current_page - 1) * ITEMS_PER_PAGE
+end_idx = start_idx + ITEMS_PER_PAGE
+page_df = filtered_df.iloc[start_idx:end_idx]
+
+# --- 8. RECORDBOOK DISPLAY ---
+st.markdown(f"#### 📋 Document Records ({total_items} total records • Showing Page {current_page} of {total_pages})")
+
+if not page_df.empty:
+    # Clean text & split multiline entries into clean bullet points
     def format_cell_content(val):
         if pd.isna(val) or str(val).strip() in ['nan', 'None', '']:
             return "N/A"
@@ -352,16 +381,72 @@ if not filtered_df.empty:
         
         return html.escape(raw_str)
 
-    # Apply HTML formatting to entire table
-    display_df = filtered_df.copy()
+    # Apply HTML formatting
+    display_df = page_df.copy()
     for col in display_df.columns:
         display_df[col] = display_df[col].apply(format_cell_content)
 
-    # Render clean HTML Table
+    # Render Table
     raw_html = display_df.to_html(index=False, classes="record-table", escape=False)
     st.markdown(f'<div class="table-wrapper">{raw_html}</div>', unsafe_allow_html=True)
 else:
     st.warning("❌ No records found matching your query/filter.")
+
+# --- 9. PAGINATION BUTTONS AT BOTTOM ---
+if total_pages > 1:
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Render direct page numbers if 7 or fewer pages
+    if total_pages <= 7:
+        page_cols = st.columns(total_pages + 2)
+        
+        # Previous Button
+        with page_cols[0]:
+            if st.button("◀", key="btn_prev_num", disabled=(current_page == 1), use_container_width=True):
+                st.session_state["current_page"] -= 1
+                st.rerun()
+
+        # Numbered Page Buttons
+        for p in range(1, total_pages + 1):
+            with page_cols[p]:
+                btn_type = "primary" if p == current_page else "secondary"
+                if st.button(str(p), key=f"btn_page_{p}", type=btn_type, use_container_width=True):
+                    st.session_state["current_page"] = p
+                    st.rerun()
+
+        # Next Button
+        with page_cols[-1]:
+            if st.button("▶", key="btn_next_num", disabled=(current_page == total_pages), use_container_width=True):
+                st.session_state["current_page"] += 1
+                st.rerun()
+
+    # Dropdown selector for large page numbers (> 7 pages)
+    else:
+        c_prev, c_select, c_next = st.columns([1, 2, 1])
+        
+        with c_prev:
+            if st.button("◀ Previous", key="btn_prev_drop", disabled=(current_page == 1), use_container_width=True):
+                st.session_state["current_page"] -= 1
+                st.rerun()
+
+        with c_select:
+            selected_p = st.selectbox(
+                "Jump to page",
+                options=list(range(1, total_pages + 1)),
+                index=current_page - 1,
+                key="page_dropdown_select",
+                label_visibility="collapsed"
+            )
+            if selected_p != current_page:
+                st.session_state["current_page"] = selected_p
+                st.rerun()
+
+        with c_next:
+            if st.button("Next ▶", key="btn_next_drop", disabled=(current_page == total_pages), use_container_width=True):
+                st.session_state["current_page"] += 1
+                st.rerun()
+
+    st.markdown(f"<p style='text-align: center; font-size: 13px; opacity: 0.85; margin-top: 6px;'>Page <b>{current_page}</b> of <b>{total_pages}</b> ({total_items} matching records • 15 per page)</p>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -370,6 +455,6 @@ if st.button("Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
-# --- 8. FOOTER ---
+# --- 10. FOOTER ---
 st.markdown("---")
 st.caption("Eastern Samar National Comprehensive High School")
