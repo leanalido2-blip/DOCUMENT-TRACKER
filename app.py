@@ -48,7 +48,7 @@ custom_css = """
         /* Oswald font for Main School Header */
         .school-header {
             font-family: 'Oswald', sans-serif !important;
-            font-size: 38px !important; 
+            font-size: 34px !important; 
             font-weight: 700 !important;
             letter-spacing: 0.5px;
             color: var(--text-color) !important;
@@ -59,22 +59,22 @@ custom_css = """
         /* Subtitle */
         .portal-subtitle {
             font-family: 'Inter', sans-serif !important;
-            font-size: 15px !important;
+            font-size: 14px !important;
             font-weight: 500 !important;
             color: var(--text-color) !important;
             opacity: 0.85;
             margin-top: 0px !important;
         }
 
-        /* Minimalist & Compact KPI Cards */
+        /* Minimalist & Compact KPI Cards (Dashboard Header Tiles) */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button {
             width: 100% !important;
-            height: 75px !important;
+            height: 68px !important;
             border-radius: 8px !important;
             border: 1px solid rgba(128, 128, 128, 0.3) !important;
             background-color: rgba(128, 128, 128, 0.08) !important;
             color: var(--text-color) !important;
-            padding: 8px 12px !important;
+            padding: 6px 10px !important;
             transition: all 0.2s ease-in-out !important;
             display: flex !important;
             flex-direction: column !important;
@@ -83,14 +83,14 @@ custom_css = """
             text-align: center !important;
         }
 
-        /* Enforce Oswald Font on Dashboard Tiles */
+        /* Oswald Font on Dashboard Tiles */
         div[data-testid="stColumn"] div[data-testid="stButton"] > button,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button p,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button div,
         div[data-testid="stColumn"] div[data-testid="stButton"] > button span {
             font-family: 'Oswald', sans-serif !important;
             font-weight: 700 !important;
-            font-size: 20px !important;
+            font-size: 18px !important;
             line-height: 1.2 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.5px !important;
@@ -107,29 +107,29 @@ custom_css = """
             background-color: rgba(128, 128, 128, 0.16) !important;
         }
 
-        /* --- ROCK-SOLID TABLE CONTAINER --- */
+        /* --- COMPACT TABLE CONTAINER & TYPOGRAPHY --- */
         .table-wrapper {
             width: 100%;
-            max-height: 620px;
+            max-height: 520px;
             overflow-y: auto;
             overflow-x: auto;
             border: 1px solid rgba(128, 128, 128, 0.3);
             border-radius: 8px;
-            margin-top: 12px;
+            margin-top: 10px;
             background-color: var(--background-color, #0e1117);
         }
 
         table.record-table {
             width: 100%;
-            min-width: 1100px;
+            min-width: 1050px;
             border-collapse: separate;
             border-spacing: 0;
             font-family: 'Inter', sans-serif;
-            font-size: 13px;
+            font-size: 12px; /* Compact reading size */
             color: var(--text-color, #ffffff) !important;
         }
 
-        /* OPAQUE STICKY HEADER (Guaranteed no bleed-through) */
+        /* OPAQUE STICKY HEADER */
         table.record-table th {
             position: sticky;
             top: 0;
@@ -138,10 +138,10 @@ custom_css = """
             color: var(--text-color, #ffffff) !important;
             font-family: 'Oswald', sans-serif;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 13px; /* Slightly smaller header font */
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 12px 14px;
+            padding: 9px 10px;
             text-align: left;
             border-bottom: 2px solid rgba(128, 128, 128, 0.4);
             white-space: nowrap !important;
@@ -150,28 +150,38 @@ custom_css = """
 
         /* TABLE BODY CELLS */
         table.record-table td {
-            padding: 10px 14px;
+            padding: 7px 10px; /* Tighter vertical padding */
             border-bottom: 1px solid rgba(128, 128, 128, 0.2);
             vertical-align: top;
             color: var(--text-color, #ffffff) !important;
-            line-height: 1.5;
+            line-height: 1.4;
             white-space: normal;
             word-break: break-word;
         }
 
-        /* Column Constraints */
-        table.record-table td:nth-child(1) { min-width: 80px; width: 80px; }   /* TRF NO */
-        table.record-table td:nth-child(2) { min-width: 100px; width: 100px; } /* DATE */
-        table.record-table td:nth-child(3) { min-width: 180px; }              /* SOURCE */
-        table.record-table td:nth-child(4) { min-width: 320px; }              /* REPORTS */
-        table.record-table td:nth-child(5) { min-width: 110px; width: 110px; } /* DESTINATION */
-        table.record-table td:nth-child(6) { min-width: 100px; width: 100px; } /* STATUS */
-        table.record-table td:nth-child(7) { min-width: 100px; width: 100px; } /* REMARKS */
-        table.record-table td:nth-child(8) { min-width: 120px; width: 120px; } /* DATE RETURNED */
+        /* COLUMN WIDTH CONSTRAINTS & FITTED DATES */
+        table.record-table th:nth-child(1), table.record-table td:nth-child(1) { width: 75px; min-width: 75px; }   /* TRF NO */
+        table.record-table th:nth-child(2), table.record-table td:nth-child(2) { width: 95px; min-width: 95px; white-space: nowrap !important; } /* DATE (Strict 1-line) */
+        table.record-table th:nth-child(3), table.record-table td:nth-child(3) { min-width: 160px; }              /* SOURCE */
+        table.record-table th:nth-child(4), table.record-table td:nth-child(4) { min-width: 280px; }              /* REPORTS */
+        table.record-table th:nth-child(5), table.record-table td:nth-child(5) { width: 100px; min-width: 100px; } /* DESTINATION */
+        table.record-table th:nth-child(6), table.record-table td:nth-child(6) { width: 90px; min-width: 90px; }   /* STATUS */
+        table.record-table th:nth-child(7), table.record-table td:nth-child(7) { width: 90px; min-width: 90px; }   /* REMARKS */
+        table.record-table th:nth-child(8), table.record-table td:nth-child(8) { width: 110px; min-width: 110px; white-space: nowrap !important; } /* DATE RETURNED (Strict 1-line) */
 
         /* Subtle row hover highlight */
         table.record-table tbody tr:hover td {
             background-color: rgba(128, 128, 128, 0.1) !important;
+        }
+
+        /* --- SLEEK & SMALL PAGINATION BUTTONS --- */
+        .pagination-bar div[data-testid="stButton"] > button {
+            height: 32px !important;
+            min-height: 32px !important;
+            font-size: 12px !important;
+            font-family: 'Inter', sans-serif !important;
+            padding: 2px 6px !important;
+            border-radius: 6px !important;
         }
     </style>
 """
@@ -223,7 +233,7 @@ col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
     if os.path.exists("ESNCHS-LOGO.png"):
-        st.image("ESNCHS-LOGO.png", width=100)
+        st.image("ESNCHS-LOGO.png", width=95)
     else:
         st.title("🏫")
 
@@ -341,8 +351,8 @@ if not filtered_df.empty:
             )
             filtered_df = filtered_df[mask_remark]
 
-# --- 7. PAGINATION PREPARATION ---
-ITEMS_PER_PAGE = 15
+# --- 7. PAGINATION PREPARATION (10 ENTRIES PER PAGE) ---
+ITEMS_PER_PAGE = 10
 total_items = len(filtered_df)
 total_pages = max(1, math.ceil(total_items / ITEMS_PER_PAGE))
 
@@ -358,7 +368,7 @@ end_idx = start_idx + ITEMS_PER_PAGE
 page_df = filtered_df.iloc[start_idx:end_idx]
 
 # --- 8. RECORDBOOK DISPLAY ---
-st.markdown(f"#### 📋 Document Records ({total_items} total records • Showing Page {current_page} of {total_pages})")
+st.markdown(f"#### 📋 Document Records ({total_items} total records • Page {current_page} of {total_pages})")
 
 if not page_df.empty:
     # Clean text & split multiline entries into clean bullet points
@@ -392,9 +402,12 @@ if not page_df.empty:
 else:
     st.warning("❌ No records found matching your query/filter.")
 
-# --- 9. PAGINATION BUTTONS AT BOTTOM ---
+# --- 9. SMALL COMPACT PAGINATION BUTTONS AT BOTTOM ---
 if total_pages > 1:
     st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Styled wrapper for small pagination buttons
+    st.markdown('<div class="pagination-bar">', unsafe_allow_html=True)
     
     # Render direct page numbers if 7 or fewer pages
     if total_pages <= 7:
@@ -446,7 +459,9 @@ if total_pages > 1:
                 st.session_state["current_page"] += 1
                 st.rerun()
 
-    st.markdown(f"<p style='text-align: center; font-size: 13px; opacity: 0.85; margin-top: 6px;'>Page <b>{current_page}</b> of <b>{total_pages}</b> ({total_items} matching records • 15 per page)</p>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown(f"<p style='text-align: center; font-size: 12px; opacity: 0.8; margin-top: 4px;'>Page <b>{current_page}</b> of <b>{total_pages}</b> ({total_items} matching records • 10 per page)</p>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
