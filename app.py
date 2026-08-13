@@ -25,7 +25,7 @@ def set_status_filter(status_name):
     st.session_state["selected_remark"] = status_name
     st.session_state["current_page"] = 1  # Reset to page 1 on filter click
 
-# --- 2. ADVANCED STYLING & CUSTOM CSS ---
+# --- 2. ADVANCED STYLING & CUSTOM CSS (LIGHT & DARK MODE ADAPTIVE) ---
 font_link = "https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"
 st.markdown(f'<link href="{font_link}" rel="stylesheet">', unsafe_allow_html=True)
 
@@ -36,7 +36,7 @@ custom_css = """
             font-family: 'Inter', sans-serif;
         }
 
-        /* Sleek white circle background for logo */
+        /* Logo background */
         [data-testid="stImage"] img {
             background-color: #FFFFFF !important;
             border-radius: 50% !important;
@@ -66,15 +66,15 @@ custom_css = """
             margin-top: 0px !important;
         }
 
-        /* Dashboard Tile Cards */
-        div[data-testid="stColumn"] div[data-testid="stButton"] > button {
+        /* --- DASHBOARD METRIC TILES --- */
+        .metric-tiles div[data-testid="stColumn"] div[data-testid="stButton"] > button {
             width: 100% !important;
-            height: 68px !important;
+            height: 65px !important;
             border-radius: 8px !important;
             border: 1px solid rgba(128, 128, 128, 0.3) !important;
             background-color: rgba(128, 128, 128, 0.08) !important;
             color: var(--text-color) !important;
-            padding: 6px 10px !important;
+            padding: 4px 8px !important;
             transition: all 0.2s ease-in-out !important;
             display: flex !important;
             flex-direction: column !important;
@@ -83,14 +83,13 @@ custom_css = """
             text-align: center !important;
         }
 
-        /* Oswald Font on Dashboard Tiles */
-        div[data-testid="stColumn"] div[data-testid="stButton"] > button,
-        div[data-testid="stColumn"] div[data-testid="stButton"] > button p,
-        div[data-testid="stColumn"] div[data-testid="stButton"] > button div,
-        div[data-testid="stColumn"] div[data-testid="stButton"] > button span {
+        .metric-tiles div[data-testid="stColumn"] div[data-testid="stButton"] > button,
+        .metric-tiles div[data-testid="stColumn"] div[data-testid="stButton"] > button p,
+        .metric-tiles div[data-testid="stColumn"] div[data-testid="stButton"] > button div,
+        .metric-tiles div[data-testid="stColumn"] div[data-testid="stButton"] > button span {
             font-family: 'Oswald', sans-serif !important;
             font-weight: 700 !important;
-            font-size: 18px !important;
+            font-size: 17px !important;
             line-height: 1.2 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.5px !important;
@@ -101,13 +100,13 @@ custom_css = """
             padding: 0 !important;
         }
 
-        div[data-testid="stColumn"] div[data-testid="stButton"] > button:hover {
+        .metric-tiles div[data-testid="stColumn"] div[data-testid="stButton"] > button:hover {
             transform: translateY(-2px) !important;
             border-color: rgba(128, 128, 128, 0.6) !important;
             background-color: rgba(128, 128, 128, 0.16) !important;
         }
 
-        /* --- COMPACT TABLE CONTAINER & TYPOGRAPHY --- */
+        /* --- FULLY THEME-ADAPTIVE TABLE CONTAINER & TYPOGRAPHY --- */
         .table-wrapper {
             width: 100%;
             max-height: 520px;
@@ -116,7 +115,7 @@ custom_css = """
             border: 1px solid rgba(128, 128, 128, 0.3);
             border-radius: 8px;
             margin-top: 10px;
-            background-color: var(--background-color, #0e1117);
+            background-color: var(--background-color) !important;
         }
 
         table.record-table {
@@ -126,16 +125,17 @@ custom_css = """
             border-spacing: 0;
             font-family: 'Inter', sans-serif;
             font-size: 12px;
-            color: var(--text-color, #ffffff) !important;
+            color: var(--text-color) !important;
+            background-color: transparent !important;
         }
 
-        /* OPAQUE STICKY HEADER */
+        /* OPAQUE STICKY HEADER (Adapts to Light/Dark) */
         table.record-table th {
             position: sticky;
             top: 0;
             z-index: 100;
-            background-color: var(--secondary-background-color, #1a1d24) !important;
-            color: var(--text-color, #ffffff) !important;
+            background-color: var(--secondary-background-color) !important;
+            color: var(--text-color) !important;
             font-family: 'Oswald', sans-serif;
             font-weight: 700;
             font-size: 13px;
@@ -145,7 +145,7 @@ custom_css = """
             text-align: left;
             border-bottom: 2px solid rgba(128, 128, 128, 0.4);
             white-space: nowrap !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         /* TABLE BODY CELLS */
@@ -153,7 +153,7 @@ custom_css = """
             padding: 7px 10px;
             border-bottom: 1px solid rgba(128, 128, 128, 0.2);
             vertical-align: top;
-            color: var(--text-color, #ffffff) !important;
+            color: var(--text-color) !important;
             line-height: 1.4;
             white-space: normal;
             word-break: break-word;
@@ -170,23 +170,28 @@ custom_css = """
         table.record-table th:nth-child(8), table.record-table td:nth-child(8) { width: 110px; min-width: 110px; white-space: nowrap !important; } /* DATE RETURNED */
 
         table.record-table tbody tr:hover td {
-            background-color: rgba(128, 128, 128, 0.1) !important;
+            background-color: rgba(128, 128, 128, 0.12) !important;
         }
 
-        /* --- ULTRA-COMPACT MINI PAGINATION BUTTONS --- */
-        .page-bar div[data-testid="stButton"] > button,
-        .page-bar div[data-testid="stButton"] > button p,
-        .page-bar div[data-testid="stButton"] > button div,
-        .page-bar div[data-testid="stButton"] > button span {
-            height: 28px !important;
-            min-height: 28px !important;
-            font-size: 11px !important;
+        /* --- COMPACT MINI PAGINATION BUTTONS --- */
+        .pagination-wrapper div[data-testid="stButton"] > button {
+            height: 32px !important;
+            min-height: 32px !important;
+            max-height: 32px !important;
+            font-size: 12px !important;
             font-family: 'Inter', sans-serif !important;
             font-weight: 600 !important;
-            padding: 0px 2px !important;
+            padding: 0px 4px !important;
             border-radius: 5px !important;
-            line-height: 28px !important;
+            line-height: 1 !important;
             margin: 0 !important;
+        }
+        
+        .pagination-wrapper div[data-testid="stButton"] > button p,
+        .pagination-wrapper div[data-testid="stButton"] > button span {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
         }
     </style>
 """
@@ -261,6 +266,7 @@ if not df.empty:
         returned_count = (remarks_series.str.contains("RETURNED", na=False)).sum()
         released_count = (remarks_series.str.contains("RELEASED", na=False)).sum()
 
+    st.markdown('<div class="metric-tiles">', unsafe_allow_html=True)
     m1, m2, m3, m4 = st.columns(4)
 
     with m1:
@@ -271,6 +277,7 @@ if not df.empty:
         st.button(f"↩️ RETURNED\n{returned_count}", on_click=set_status_filter, args=("RETURNED",), use_container_width=True)
     with m4:
         st.button(f"✅ RELEASED\n{released_count}", on_click=set_status_filter, args=("RELEASED",), use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -380,67 +387,57 @@ if not page_df.empty:
 else:
     st.warning("❌ No records found matching your query/filter.")
 
-# --- 9. CENTERED & ULTRA-COMPACT PAGE BUTTONS ---
+# --- 9. NUMBERED PAGINATION BAR (STRICTLY MAX 5 VISIBLE NUMBERS) ---
 if total_pages > 1:
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Wrap pagination in a centered container column so buttons don't stretch wall-to-wall
-    _, center_nav_col, _ = st.columns([1, 1.2, 1])
-    
-    with center_nav_col:
-        st.markdown('<div class="page-bar">', unsafe_allow_html=True)
+    # Strictly limit visible page numbers to at most 5 at a time
+    MAX_VISIBLE = 5
+    if total_pages <= MAX_VISIBLE:
+        visible_pages = list(range(1, total_pages + 1))
+    else:
+        half = MAX_VISIBLE // 2
+        start_p = max(1, current_page - half)
+        end_p = min(total_pages, start_p + MAX_VISIBLE - 1)
         
-        if total_pages <= 7:
-            page_cols = st.columns(total_pages + 2)
+        # Adjust range if near the end
+        if end_p - start_p + 1 < MAX_VISIBLE:
+            start_p = max(1, end_p - MAX_VISIBLE + 1)
             
-            # Previous Button
-            with page_cols[0]:
-                if st.button("◀", key="btn_prev_num", disabled=(current_page == 1), use_container_width=True):
-                    st.session_state["current_page"] -= 1
+        visible_pages = list(range(start_p, end_p + 1))
+
+    num_buttons = len(visible_pages) + 2  # Visible numbers + Previous + Next
+    
+    # Centered container layout
+    left_space, nav_center, right_space = st.columns([1, min(2.0, num_buttons * 0.28), 1])
+    
+    with nav_center:
+        st.markdown('<div class="pagination-wrapper">', unsafe_allow_html=True)
+        nav_cols = st.columns(num_buttons)
+        
+        # Previous Button
+        with nav_cols[0]:
+            if st.button("◀", key="btn_prev_num", disabled=(current_page == 1), use_container_width=True):
+                st.session_state["current_page"] -= 1
+                st.rerun()
+
+        # Maximum of 5 Numbered Page Buttons
+        for idx, p in enumerate(visible_pages):
+            with nav_cols[idx + 1]:
+                btn_type = "primary" if p == current_page else "secondary"
+                if st.button(str(p), key=f"btn_page_{p}", type=btn_type, use_container_width=True):
+                    st.session_state["current_page"] = p
                     st.rerun()
 
-            # Numbered Page Buttons
-            for p in range(1, total_pages + 1):
-                with page_cols[p]:
-                    btn_type = "primary" if p == current_page else "secondary"
-                    if st.button(str(p), key=f"btn_page_{p}", type=btn_type, use_container_width=True):
-                        st.session_state["current_page"] = p
-                        st.rerun()
-
-            # Next Button
-            with page_cols[-1]:
-                if st.button("▶", key="btn_next_num", disabled=(current_page == total_pages), use_container_width=True):
-                    st.session_state["current_page"] += 1
-                    st.rerun()
-
-        else:
-            c_prev, c_select, c_next = st.columns([1, 2, 1])
-            
-            with c_prev:
-                if st.button("◀ Prev", key="btn_prev_drop", disabled=(current_page == 1), use_container_width=True):
-                    st.session_state["current_page"] -= 1
-                    st.rerun()
-
-            with c_select:
-                selected_p = st.selectbox(
-                    "Jump to page",
-                    options=list(range(1, total_pages + 1)),
-                    index=current_page - 1,
-                    key="page_dropdown_select",
-                    label_visibility="collapsed"
-                )
-                if selected_p != current_page:
-                    st.session_state["current_page"] = selected_p
-                    st.rerun()
-
-            with c_next:
-                if st.button("Next ▶", key="btn_next_drop", disabled=(current_page == total_pages), use_container_width=True):
-                    st.session_state["current_page"] += 1
-                    st.rerun()
-
+        # Next Button
+        with nav_cols[-1]:
+            if st.button("▶", key="btn_next_num", disabled=(current_page == total_pages), use_container_width=True):
+                st.session_state["current_page"] += 1
+                st.rerun()
+                
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown(f"<p style='text-align: center; font-size: 11px; opacity: 0.75; margin-top: 2px;'>Page <b>{current_page}</b> of <b>{total_pages}</b> ({total_items} records • 10 per page)</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; font-size: 11px; opacity: 0.75; margin-top: 4px;'>Page <b>{current_page}</b> of <b>{total_pages}</b> ({total_items} records • 10 per page)</p>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
