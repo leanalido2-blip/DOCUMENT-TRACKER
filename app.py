@@ -186,3 +186,243 @@ st.markdown(custom_css, unsafe_allow_html=True)
 def get_csv_url(sheet_url):
     if "/edit" in sheet_url:
         sheet_id = sheet_url.split("/d/")[1].split("/edit")[0]
+        return f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv"
+    return sheet_url
+
+# Load live data from Google Sheets (Re-checks every 10 seconds)
+@st.cache_data(ttl=10)
+def load_data(url):
+    try:
+        csv_url = get_csv_url(url)
+        df = pd.read_csv(csv_url, dtype=str)
+        
+        # Clean headers & remove blank columns
+        df.columns = df.columns.astype(str).str.strip()
+        df = df.loc[:, ~df.columns.str.contains('^Unnamed', case=False, na=False)]
+        df = df.loc[:, df.columns != '']
+        
+        # Clean rows
+        df = df.dropna(how='all')
+        df = df.fillna("N/A")
+        
+        return df
+    except Exception as e:
+        st.error("⚠️ Unable to connect to Google Sheet. Please check your document share settings.")
+        return pd.DataFrame()
+
+df = load_data(GSHEET_URL)
+
+# Locate 'REMARKS' column
+target_remarks_col = None
+if not df.empty:
+    for col in df.columns:
+        if col.upper() in ["REMARKS", "REMARK"]:
+            target_remarks_col = col
+            break
+
+# --- 4. BRANDED HEADER ---
+col_logo, col_title = st.columns([1, 6])
+
+with col_logo:
+    if os.path.exists("ESNCHS-LOGO.png"):
+        st.image("ESNCHS-LOGO.png", width=95)
+    else:
+        st.title("🏫")
+
+with col_title:
+    st.markdown('<p class="school-header">EASTERN SAMAR NATIONAL COMPREHENSIVE HIGH SCHOOL</p>', unsafe_allow_html=True)
+    st.markdown('<p class="portal-subtitle">📜 Records & Document Status Tracking Portal</p>', unsafe_allow_html=True)
+
+st.divider()
+
+# --- 5. CLICKABLE DASHBOARD TILES ---
+if not df.empty:
+    total_docs = len(df)
+    pending_count = 0
+    returned_count = 0
+    released_count = 0
+
+    if target_remarks_col:
+        remarks_series = df[target_remarks_col].astype(str).str.strip().str.upper()
+        pending_count = (remarks_series.str.contains("PENDING", na=False)).sum()
+        returned_count = (remarks_series.str.contains("RETURNED", na=False)).sum()
+        released_count = (remarks_series.str.contains("RELEASED", na=False)).sum()
+
+    st.markdown('<div class="metric-tiles">', unsafe_allow_html=True)
+    m1, m2, m3, m4 = st.columns(4)
+
+    with m1:
+        st.button(f"📊 TOTAL\n{total_docs}", on_click=set_status_filter, args=("All Remarks",), use_container_width=True)
+    with m2:
+        st.button(f"⏳ PENDING\n{pending_count}", on_click=set_status_filter, args=("PENDING",), use_container_width=True)
+    with m3:
+        st.button(f"↩️ RETURNED\n{returned_count}", on_click=set_status_filter, args=("RETURNED",), use_container_width=True)
+    with m4:
+        st.button(f"✅ RELEASED\n{released_count}", on_click=set_status_filter, args=("RELEASED",), use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+# --- 6. SEARCH & FILTER CONTROLS ---
+col_search, col_filter = st.columns([3, 1])
+
+with col_search:
+    search_query = st.text_input(
+        "Search records", 
+        placeholder="Type TRF No, Document Name, or Source to search...", 
+        label_visibility="collapsed"
+    ).strip().lower()
+
+with col_filter:
+    default_statuses = ["PENDING", "RETURNED", "RELEASED"]
+    
+    sheet_remarks = []
+    if target_remarks_col:
+        raw_vals = df[target_remarks_col].dropna().unique()
+        sheet_remarks = [
+            str(r).strip().upper() 
+            for r in raw_vals 
+            if str(r).strip().upper() not in ["N/A", "NAN", ""]
+        ]
+
+    combined_list = list(dict.fromkeys(default_statuses + sorted(sheet_remarks)))
+    remark_options = ["All Remarks"] + combined_list
+
+    selected_remark = st.selectbox(
+        "Filter by Remark", 
+        remark_options, 
+        key="selected_remark",
+        label_visibility="collapsed"
+    )
+
+# Reset page on query/filter changes
+if ("last_search" in st.session_state and st.session_state["last_search"] != search_query) or \
+   ("last_remark" in st.session_state and st.session_state["last_remark"] != selected_remark):
+    st.session_state["current_page"] = 1
+
+st.session_state["last_search"] = search_query
+st.session_state["last_remark"] = selected_remark
+
+# --- 7. FILTERING LOGIC ---
+filtered_df = df.copy()
+
+if not filtered_df.empty:
+    if search_query:
+        mask_search = filtered_df.apply(
+            lambda row: row.astype(str).str.lower().str.contains(search_query).any(), 
+            axis=1
+        )
+        filtered_df = filtered_df[mask_search]
+
+    if selected_remark != "All Remarks":
+        if target_remarks_col and target_remarks_col in filtered_df.columns:
+            mask_remark = filtered_df[target_remarks_col].astype(str).str.strip().str.upper().str.contains(
+                selected_remark.upper(), na=False
+            )
+            filtered_df = filtered_df[mask_remark]
+
+# --- 8. PAGINATION SETUP (10 ITEMS PER PAGE) ---
+ITEMS_PER_PAGE = 10
+total_items = len(filtered_df)
+total_pages = max(1, math.ceil(total_items / ITEMS_PER_PAGE))
+
+if st.session_state["current_page"] > total_pages:
+    st.session_state["current_page"] = total_pages
+
+current_page = st.session_state["current_page"]
+
+start_idx = (current_page - 1) * ITEMS_PER_PAGE
+end_idx = start_idx + ITEMS_PER_PAGE
+page_df = filtered_df.iloc[start_idx:end_idx]
+
+# --- 9. DISPLAY RECORDS ---
+st.markdown(f"#### 📋 Document Records ({total_items} total records • Page {current_page} of {total_pages})")
+
+if not page_df.empty:
+    def format_cell_content(val):
+        if pd.isna(val) or str(val).strip() in ['nan', 'None', '']:
+            return "N/A"
+        
+        raw_str = str(val).replace('\\n', '\n')
+        lines = [line.strip() for line in raw_str.split('\n') if line.strip()]
+        
+        if len(lines) > 1:
+            formatted_items = []
+            for item in lines:
+                escaped = html.escape(item)
+                if not escaped.startswith('•'):
+                    formatted_items.append(f"• {escaped}")
+                else:
+                    formatted_items.append(escaped)
+            return "<br>".join(formatted_items)
+        
+        return html.escape(raw_str)
+
+    display_df = page_df.copy()
+    for col in display_df.columns:
+        display_df[col] = display_df[col].apply(format_cell_content)
+
+    raw_html = display_df.to_html(index=False, classes="record-table", escape=False)
+    st.markdown(f'<div class="table-wrapper">{raw_html}</div>', unsafe_allow_html=True)
+else:
+    st.warning("❌ No records found matching your search or filter criteria.")
+
+# --- 10. PAGINATION BAR ---
+if total_pages > 1:
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    MAX_VISIBLE = 5
+    if total_pages <= MAX_VISIBLE:
+        visible_pages = list(range(1, total_pages + 1))
+    else:
+        half = MAX_VISIBLE // 2
+        start_p = max(1, current_page - half)
+        end_p = min(total_pages, start_p + MAX_VISIBLE - 1)
+        
+        if end_p - start_p + 1 < MAX_VISIBLE:
+            start_p = max(1, end_p - MAX_VISIBLE + 1)
+            
+        visible_pages = list(range(start_p, end_p + 1))
+
+    num_buttons = len(visible_pages) + 2  # Visible numbers + Prev + Next
+    
+    left_space, nav_center, right_space = st.columns([1, min(2.0, num_buttons * 0.28), 1])
+    
+    with nav_center:
+        st.markdown('<div class="pagination-wrapper">', unsafe_allow_html=True)
+        nav_cols = st.columns(num_buttons)
+        
+        # Previous Button
+        with nav_cols[0]:
+            if st.button("◀", key="btn_prev_num", disabled=(current_page == 1), use_container_width=True):
+                st.session_state["current_page"] -= 1
+                st.rerun()
+
+        # Page Numbers
+        for idx, p in enumerate(visible_pages):
+            with nav_cols[idx + 1]:
+                btn_type = "primary" if p == current_page else "secondary"
+                if st.button(str(p), key=f"btn_page_{p}", type=btn_type, use_container_width=True):
+                    st.session_state["current_page"] = p
+                    st.rerun()
+
+        # Next Button
+        with nav_cols[-1]:
+            if st.button("▶", key="btn_next_num", disabled=(current_page == total_pages), use_container_width=True):
+                st.session_state["current_page"] += 1
+                st.rerun()
+                
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown(f"<p style='text-align: center; font-size: 11px; opacity: 0.75; margin-top: 4px;'>Page <b>{current_page}</b> of <b>{total_pages}</b> ({total_items} records • 10 per page)</p>", unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Manual Refresh Button
+if st.button("🔄 Refresh Data"):
+    st.cache_data.clear()
+    st.rerun()
+
+# --- 11. FOOTER ---
+st.markdown("---")
+st.caption("Eastern Samar National Comprehensive High School • Document Tracking Portal")
